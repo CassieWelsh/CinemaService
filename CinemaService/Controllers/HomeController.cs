@@ -7,10 +7,12 @@ namespace CinemaService.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly CinemaContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, CinemaContext context)
         {
             _logger = logger;
+            _context = context;
         }
 
         public IActionResult Index()
