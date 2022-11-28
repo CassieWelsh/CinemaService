@@ -88,6 +88,7 @@ namespace CinemaService.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimsIdentity.DefaultNameClaimType, user.FirstName),
+                new Claim(ClaimsIdentity.DefaultIssuer, user.Email),
                 new Claim(ClaimsIdentity.DefaultRoleClaimType, user.Role.ToString()),
             };
             ClaimsIdentity identity = new ClaimsIdentity(claims, "ApplicationCookie", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
