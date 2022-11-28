@@ -1,6 +1,12 @@
 ﻿using CinemaService.Models;
+using CinemaService.Models.ViewModel;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace CinemaService.Controllers
 {
@@ -15,6 +21,7 @@ namespace CinemaService.Controllers
             _context = context;
         }
 
+        [Authorize(Roles = "Cashier")]
         public IActionResult Index()
         {
             return View();
@@ -30,5 +37,6 @@ namespace CinemaService.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
     }
 }

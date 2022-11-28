@@ -356,7 +356,7 @@ namespace CinemaService.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
-                    b.Property<long>("TheatreId")
+                    b.Property<long?>("TheatreId")
                         .HasColumnType("bigint");
 
                     b.HasIndex("TheatreId");
@@ -493,9 +493,7 @@ namespace CinemaService.Migrations
                 {
                     b.HasOne("CinemaService.Models.Theatre", "Theatre")
                         .WithMany("Employees")
-                        .HasForeignKey("TheatreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("TheatreId");
 
                     b.Navigation("Theatre");
                 });

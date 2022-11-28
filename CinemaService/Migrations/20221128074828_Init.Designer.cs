@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CinemaService.Migrations
 {
     [DbContext(typeof(CinemaContext))]
-    [Migration("20221126195855_Ver.1")]
-    partial class Ver1
+    [Migration("20221128074828_Init")]
+    partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -358,7 +358,7 @@ namespace CinemaService.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
-                    b.Property<long>("TheatreId")
+                    b.Property<long?>("TheatreId")
                         .HasColumnType("bigint");
 
                     b.HasIndex("TheatreId");
@@ -495,9 +495,7 @@ namespace CinemaService.Migrations
                 {
                     b.HasOne("CinemaService.Models.Theatre", "Theatre")
                         .WithMany("Employees")
-                        .HasForeignKey("TheatreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("TheatreId");
 
                     b.Navigation("Theatre");
                 });

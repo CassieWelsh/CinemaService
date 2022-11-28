@@ -6,7 +6,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace CinemaService.Migrations
 {
-    public partial class Ver1 : Migration
+    public partial class Init : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -174,8 +174,7 @@ namespace CinemaService.Migrations
                         name: "FK_User_Theatre_TheatreId",
                         column: x => x.TheatreId,
                         principalTable: "Theatre",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
