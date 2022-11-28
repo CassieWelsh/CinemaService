@@ -9,7 +9,6 @@ namespace CinemaService.Models
         }
 
         public DbSet<Country> Country { get; set; }
-        public DbSet<Employee> Employee { get; set; }
         public DbSet<Genre> Genre { get; set; }
         public DbSet<Hall> Hall { get; set; }
         public DbSet<Movie> Movie { get; set; }

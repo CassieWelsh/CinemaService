@@ -1,4 +1,5 @@
 ﻿using CinemaService.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
@@ -15,6 +16,7 @@ namespace CinemaService.Controllers
             _context = context;
         }
 
+        //[Authorize(Roles = "Cashier")]
         public IActionResult Index()
         {
             return View();
@@ -30,5 +32,6 @@ namespace CinemaService.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
     }
 }

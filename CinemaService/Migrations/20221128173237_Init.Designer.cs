@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CinemaService.Migrations
 {
     [DbContext(typeof(CinemaContext))]
-    [Migration("20221126195855_Ver.1")]
-    partial class Ver1
+    [Migration("20221128173237_Init")]
+    partial class Init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -208,9 +208,6 @@ namespace CinemaService.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<long>("EmployeeId")
-                        .HasColumnType("bigint");
-
                     b.Property<long>("HallId")
                         .HasColumnType("bigint");
 
@@ -223,13 +220,16 @@ namespace CinemaService.Migrations
                     b.Property<long>("MovieId")
                         .HasColumnType("bigint");
 
-                    b.HasKey("Id");
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
 
-                    b.HasIndex("EmployeeId");
+                    b.HasKey("Id");
 
                     b.HasIndex("HallId");
 
                     b.HasIndex("MovieId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Session");
                 });
@@ -295,15 +295,15 @@ namespace CinemaService.Migrations
                     b.Property<DateOnly>("Birthdate")
                         .HasColumnType("date");
 
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -314,11 +314,17 @@ namespace CinemaService.Migrations
                     b.Property<DateTime>("RegisterDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.Property<long?>("TheatreId")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
-                    b.ToTable("User");
+                    b.HasIndex("TheatreId");
 
-                    b.HasDiscriminator<string>("Discriminator").HasValue("User");
+                    b.ToTable("User");
                 });
 
             modelBuilder.Entity("CountryMovie", b =>
@@ -349,21 +355,6 @@ namespace CinemaService.Migrations
                     b.HasIndex("MoviesId");
 
                     b.ToTable("GenreMovie");
-                });
-
-            modelBuilder.Entity("CinemaService.Models.Employee", b =>
-                {
-                    b.HasBaseType("CinemaService.Models.User");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("TheatreId")
-                        .HasColumnType("bigint");
-
-                    b.HasIndex("TheatreId");
-
-                    b.HasDiscriminator().HasValue("Employee");
                 });
 
             modelBuilder.Entity("CinemaService.Models.Hall", b =>
@@ -417,12 +408,6 @@ namespace CinemaService.Migrations
 
             modelBuilder.Entity("CinemaService.Models.Session", b =>
                 {
-                    b.HasOne("CinemaService.Models.Employee", "Employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("CinemaService.Models.Hall", "Hall")
                         .WithMany("Sessions")
                         .HasForeignKey("HallId")
@@ -435,11 +420,17 @@ namespace CinemaService.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Employee");
+                    b.HasOne("CinemaService.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Hall");
 
                     b.Navigation("Movie");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("CinemaService.Models.Ticket", b =>
@@ -459,6 +450,15 @@ namespace CinemaService.Migrations
                     b.Navigation("Order");
 
                     b.Navigation("Seat");
+                });
+
+            modelBuilder.Entity("CinemaService.Models.User", b =>
+                {
+                    b.HasOne("CinemaService.Models.Theatre", "Theatre")
+                        .WithMany("Users")
+                        .HasForeignKey("TheatreId");
+
+                    b.Navigation("Theatre");
                 });
 
             modelBuilder.Entity("CountryMovie", b =>
@@ -489,17 +489,6 @@ namespace CinemaService.Migrations
                         .HasForeignKey("MoviesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("CinemaService.Models.Employee", b =>
-                {
-                    b.HasOne("CinemaService.Models.Theatre", "Theatre")
-                        .WithMany("Employees")
-                        .HasForeignKey("TheatreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Theatre");
                 });
 
             modelBuilder.Entity("CinemaService.Models.Hall", b =>
@@ -536,9 +525,9 @@ namespace CinemaService.Migrations
 
             modelBuilder.Entity("CinemaService.Models.Theatre", b =>
                 {
-                    b.Navigation("Employees");
-
                     b.Navigation("Halls");
+
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("CinemaService.Models.User", b =>
