@@ -2,10 +2,11 @@
 using CinemaService.Models.ViewModel;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace CinemaService.Controllers
 {
@@ -32,14 +33,13 @@ namespace CinemaService.Controllers
         {
             if (ModelState.IsValid)
             {
-                User user = await _context.User.FirstOrDefaultAsync(u => u.Email == model.Email && u.PasswordHash == model.Password);
-                if (user != null)
+                User? user = await _context.User.FirstOrDefaultAsync(u => u.Email == model.Email && u.PasswordHash == GenerateSHA256(model.Password));
+                if (user is not null)
                 {
-                    await Authenticate(model.Email, EmployeeRole.Manager); // аутентификация
-
+                    await Authenticate(user);
                     return RedirectToAction("Index", "Home");
                 }
-                ModelState.AddModelError("", "Некорректные логин и(или) пароль");
+                ModelState.AddModelError("", "Введены некорректные данные");
             }
             return View(model);
         }
@@ -56,49 +56,57 @@ namespace CinemaService.Controllers
         {
             if (ModelState.IsValid)
             {
-                User user = await _context.User.FirstOrDefaultAsync(u => u.Email == model.Email);
-                if (user == null)
+                User? user = await _context.User.FirstOrDefaultAsync(u => u.Email == model.Email);
+                if (user is null)
                 {
-                    // добавляем пользователя в бд
-                    _context.User.Add(new User
+                    User newUser = new User()
                     {
-                        Name = "Dummy",
                         Email = model.Email,
-                        PasswordHash = model.Password,
-                        RegisterDate = DateTime.UtcNow
-                    });
-
+                        PasswordHash = GenerateSHA256(model.Password),
+                        FirstName = model.FirstName,
+                        LastName = model.LastName,
+                        Birthdate = model.Birthdate,
+                        RegisterDate = DateTime.UtcNow,
+                        Role = UserRole.Customer
+                    };
+                    _context.User.Add(newUser);
                     await _context.SaveChangesAsync();
-
-                    await Authenticate(model.Email, EmployeeRole.Cashier); // аутентификация
+                    await Authenticate(newUser); // аутентификация
 
                     return RedirectToAction("Index", "Home");
                 }
                 else
-                    ModelState.AddModelError("", "Некорректные логин и(или) пароль");
+                {
+                    ModelState.AddModelError("", "Введены некорректные данные");
+                }
             }
             return View(model);
         }
 
-        private async Task Authenticate(string userName, EmployeeRole role)
+        private async Task Authenticate(User user)
         {
-            // создаем один claim
             var claims = new List<Claim>
             {
-                new Claim(ClaimsIdentity.DefaultNameClaimType, userName),
-                new Claim(ClaimsIdentity.DefaultRoleClaimType, role.ToString()),
+                new Claim(ClaimsIdentity.DefaultNameClaimType, user.FirstName),
+                new Claim(ClaimsIdentity.DefaultRoleClaimType, user.Role.ToString()),
             };
-
-            // создаем объект ClaimsIdentity
-            ClaimsIdentity id = new ClaimsIdentity(claims, "ApplicationCookie", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
-            // установка аутентификационных куки
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(id));
+            ClaimsIdentity identity = new ClaimsIdentity(claims, "ApplicationCookie", ClaimsIdentity.DefaultNameClaimType, ClaimsIdentity.DefaultRoleClaimType);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
         }
 
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Login", "Auth");
+            return RedirectToAction("Index", "Home");
         }
+
+        private string GenerateSHA256(string input)
+        {
+            using var sha256 = SHA256.Create();
+            var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
+            string hash = BitConverter.ToString(hashedBytes).Replace("-", "");
+            return hash;
+        }
+
     }
 }

@@ -160,11 +160,11 @@ namespace CinemaService.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Email = table.Column<string>(type: "text", nullable: false),
                     PasswordHash = table.Column<string>(type: "text", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
+                    FirstName = table.Column<string>(type: "text", nullable: false),
+                    LastName = table.Column<string>(type: "text", nullable: false),
                     Birthdate = table.Column<DateOnly>(type: "date", nullable: false),
                     RegisterDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Discriminator = table.Column<string>(type: "text", nullable: false),
-                    Role = table.Column<int>(type: "integer", nullable: true),
+                    Role = table.Column<int>(type: "integer", nullable: false),
                     TheatreId = table.Column<long>(type: "bigint", nullable: true)
                 },
                 constraints: table =>
@@ -216,7 +216,7 @@ namespace CinemaService.Migrations
                     MovieId = table.Column<long>(type: "bigint", nullable: false),
                     HallId = table.Column<long>(type: "bigint", nullable: false),
                     ManagerId = table.Column<long>(type: "bigint", nullable: false),
-                    EmployeeId = table.Column<long>(type: "bigint", nullable: false)
+                    UserId = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -234,8 +234,8 @@ namespace CinemaService.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Session_User_EmployeeId",
-                        column: x => x.EmployeeId,
+                        name: "FK_Session_User_UserId",
+                        column: x => x.UserId,
                         principalTable: "User",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -333,11 +333,6 @@ namespace CinemaService.Migrations
                 column: "TypeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Session_EmployeeId",
-                table: "Session",
-                column: "EmployeeId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Session_HallId",
                 table: "Session",
                 column: "HallId");
@@ -346,6 +341,11 @@ namespace CinemaService.Migrations
                 name: "IX_Session_MovieId",
                 table: "Session",
                 column: "MovieId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Session_UserId",
+                table: "Session",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Ticket_OrderId",

@@ -1,7 +1,8 @@
 ﻿namespace CinemaService.Models
 {
-    public enum EmployeeRole
+    public enum UserRole
     {
+        Customer,
         Manager,
         Cashier
     }
