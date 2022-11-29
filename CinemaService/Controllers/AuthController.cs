@@ -20,8 +20,8 @@ namespace CinemaService.Controllers
 
         public AuthController(CinemaContext context, ILogger<AuthController> logger)
         {
-            _context = context;
-            _logger = logger;
+            _context = context ?? throw new ArgumentNullException();
+            _logger = logger ?? throw new ArgumentNullException();
         }
 
         /// <summary>
@@ -48,16 +48,25 @@ namespace CinemaService.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginView model)
         {
-            if (ModelState.IsValid)
+            try
             {
-                User? user = await _context.User.FirstOrDefaultAsync(u => u.Email == model.Email && u.PasswordHash == GenerateSHA256(model.Password));
-                if (user is not null)
+                if (ModelState.IsValid)
                 {
-                    await Authenticate(user);
-                    return RedirectToAction("Index", "Cinema");
+                    User? user = await _context.User.FirstOrDefaultAsync(u => u.Email == model.Email && u.PasswordHash == GenerateSHA256(model.Password));
+                    if (user is not null)
+                    {
+                        await Authenticate(user);
+                        return RedirectToAction("Index", "Cinema");
+                    }
+                    ModelState.AddModelError("", "Введены некорректные данные");
                 }
-                ModelState.AddModelError("", "Введены некорректные данные");
             }
+            catch (InvalidOperationException e)
+            {
+                _logger.LogError(e.ToString());
+                return Redirect("/Cinema/Error");
+            }
+
             return View(model);
         }
 
@@ -85,32 +94,41 @@ namespace CinemaService.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterView model)
         {
-            if (ModelState.IsValid)
+            try
             {
-                User? user = await _context.User.FirstOrDefaultAsync(u => u.Email == model.Email);
-                if (user is null)
+                if (ModelState.IsValid)
                 {
-                    User newUser = new User()
+                    User? user = await _context.User.FirstOrDefaultAsync(u => u.Email == model.Email);
+                    if (user is null)
                     {
-                        Email = model.Email,
-                        PasswordHash = GenerateSHA256(model.Password),
-                        FirstName = model.FirstName,
-                        LastName = model.LastName,
-                        Birthdate = model.Birthdate,
-                        RegisterDate = DateTime.UtcNow,
-                        Role = UserRole.Customer
-                    };
-                    _context.User.Add(newUser);
-                    await _context.SaveChangesAsync();
-                    await Authenticate(newUser);
+                        User newUser = new User()
+                        {
+                            Email = model.Email,
+                            PasswordHash = GenerateSHA256(model.Password),
+                            FirstName = model.FirstName,
+                            LastName = model.LastName,
+                            Birthdate = model.Birthdate,
+                            RegisterDate = DateTime.UtcNow,
+                            Role = UserRole.Customer
+                        };
+                        _context.User.Add(newUser);
+                        await _context.SaveChangesAsync();
+                        await Authenticate(newUser);
 
-                    return RedirectToAction("Index", "Cinema");
-                }
-                else
-                {
-                    ModelState.AddModelError("", "Введены некорректные данные");
+                        return RedirectToAction("Index", "Cinema");
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "Введены некорректные данные");
+                    }
                 }
             }
+            catch (InvalidOperationException e)
+            {
+                _logger.LogError(e.ToString());
+                return Redirect("/Cinema/Error");
+            }
+
             return View(model);
         }
 
