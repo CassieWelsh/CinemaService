@@ -5,12 +5,12 @@ using System.Diagnostics;
 
 namespace CinemaService.Controllers
 {
-    public class HomeController : Controller
+    public class CinemaController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly ILogger<CinemaController> _logger;
         private readonly CinemaContext _context;
 
-        public HomeController(ILogger<HomeController> logger, CinemaContext context)
+        public CinemaController(ILogger<CinemaController> logger, CinemaContext context)
         {
             _logger = logger;
             _context = context;

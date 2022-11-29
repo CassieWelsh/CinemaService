@@ -10,6 +10,9 @@ using System.Text;
 
 namespace CinemaService.Controllers
 {
+    /// <summary>
+    /// Controller class for Authorization/Authentication pages.
+    /// </summary>
     public class AuthController : Controller
     {
         private CinemaContext _context;
@@ -21,12 +24,26 @@ namespace CinemaService.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Login page GET-method. If user is logged in redirects to index page.
+        /// </summary>
+        /// <returns>Login page</returns>
         [HttpGet]
         public IActionResult Login()
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                return Redirect("/Cinema/Index");
+            }
+
             return View();
         }
 
+        /// <summary>
+        /// Login POST-method to authorize user.
+        /// </summary>
+        /// <param name="model">Login form model.</param>
+        /// <returns>Redirect to index page.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginView model)
@@ -37,19 +54,33 @@ namespace CinemaService.Controllers
                 if (user is not null)
                 {
                     await Authenticate(user);
-                    return RedirectToAction("Index", "Home");
+                    return RedirectToAction("Index", "Cinema");
                 }
                 ModelState.AddModelError("", "Введены некорректные данные");
             }
             return View(model);
         }
 
+        /// <summary>
+        /// Register page GET-method. If user is logged in redirects to index page.
+        /// </summary>
+        /// <returns>Register page</returns>
         [HttpGet]
         public IActionResult Register()
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                return Redirect("/Cinema/Index");
+            }
+
             return View();
         }
 
+        /// <summary>
+        /// Register POST-method to register and authorize user.
+        /// </summary>
+        /// <param name="model">Register form model.</param>
+        /// <returns>Redirect to index page.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterView model)
@@ -71,9 +102,9 @@ namespace CinemaService.Controllers
                     };
                     _context.User.Add(newUser);
                     await _context.SaveChangesAsync();
-                    await Authenticate(newUser); // аутентификация
+                    await Authenticate(newUser);
 
-                    return RedirectToAction("Index", "Home");
+                    return RedirectToAction("Index", "Cinema");
                 }
                 else
                 {
@@ -83,6 +114,11 @@ namespace CinemaService.Controllers
             return View(model);
         }
 
+        /// <summary>
+        /// Saves user authentication data in cookies.
+        /// </summary>
+        /// <param name="user">User to authenticate.</param>
+        /// <returns>Task object.</returns>
         private async Task Authenticate(User user)
         {
             var claims = new List<Claim>
@@ -95,12 +131,21 @@ namespace CinemaService.Controllers
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
         }
 
+        /// <summary>
+        /// Logs out currently authorized <see cref="User"/> and removes user data from cookies.
+        /// </summary>
+        /// <returns>Task object.</returns>
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Cinema");
         }
 
+        /// <summary>
+        /// Generates SHA256 result <see cref="string"/> from input <see cref="string"/>.
+        /// </summary>
+        /// <param name="input">Input string.</param>
+        /// <returns>SHA256 <see cref="string"/>.</returns>
         private string GenerateSHA256(string input)
         {
             using var sha256 = SHA256.Create();
