@@ -7,9 +7,9 @@
         public short Number { get; set; }
 
         public long HallId { get; set; }
-        public virtual Hall Hall { get; set; }
+        public Hall Hall { get; set; }
         public long TypeId { get; set; }
-        public virtual SeatType Type { get; set; }
+        public SeatType Type { get; set; }
         public virtual ICollection<Ticket> Tickets { get; set; }
     }
 }
