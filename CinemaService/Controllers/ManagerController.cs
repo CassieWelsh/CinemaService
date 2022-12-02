@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CinemaService.Controllers
 {
+    /// <summary>
+    /// Controller for manager control panel 
+    /// </summary>
     [Authorize(Roles = "Manager")]
     public class ManagerController : Controller
     {
@@ -17,11 +20,19 @@ namespace CinemaService.Controllers
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
+        /// <summary>
+        /// Index page for manager control panel
+        /// </summary>
+        /// <returns>Index page</returns>
         public IActionResult Index()
         {
             return View();
         }
 
+        /// <summary>
+        /// Page to add a new movie 
+        /// </summary>
+        /// <returns>Movie form page</returns>
         [HttpGet]
         public IActionResult AddMovie()
         {
@@ -33,6 +44,12 @@ namespace CinemaService.Controllers
             );
         }
 
+        /// <summary>
+        /// POST-method to add a movie
+        /// </summary>
+        /// <param name="movieView">Movie view model</param>
+        /// <returns>Redirect to manager control panel</returns>
+        /// <exception cref="ArgumentNullException"></exception>
         [HttpPost]
         public IActionResult AddMovie(MovieView movieView)
         {

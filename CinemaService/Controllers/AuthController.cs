@@ -11,7 +11,7 @@ using System.Text;
 namespace CinemaService.Controllers
 {
     /// <summary>
-    /// Controller class for Authorization/Authentication pages.
+    /// Controller class for authorization/authentication pages.
     /// </summary>
     public class AuthController : Controller
     {
