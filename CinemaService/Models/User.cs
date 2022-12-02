@@ -14,6 +14,6 @@
         public virtual ICollection<Order> Orders { get; set; }
 
         public long? TheatreId { get; set; }
-        public virtual Theatre? Theatre { get; set; }
+        public Theatre? Theatre { get; set; }
     }
 }

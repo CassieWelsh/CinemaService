@@ -15,13 +15,13 @@ namespace CinemaService.Controllers
     /// </summary>
     public class AuthController : Controller
     {
-        private CinemaContext _context;
-        private ILogger<AuthController> _logger;
+        private readonly CinemaContext _context;
+        private readonly ILogger<AuthController> _logger;
 
         public AuthController(CinemaContext context, ILogger<AuthController> logger)
         {
-            _context = context ?? throw new ArgumentNullException();
-            _logger = logger ?? throw new ArgumentNullException();
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -48,6 +48,7 @@ namespace CinemaService.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginView model)
         {
+            if (model is null) throw new ArgumentNullException(nameof(model));
             try
             {
                 if (ModelState.IsValid)
@@ -94,6 +95,8 @@ namespace CinemaService.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterView model)
         {
+            if (model is null) throw new ArgumentNullException(nameof(model));
+
             try
             {
                 if (ModelState.IsValid)

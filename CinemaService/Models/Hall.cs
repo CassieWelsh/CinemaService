@@ -10,6 +10,6 @@
         public virtual ICollection<Session> Sessions { get; set; }
         public virtual ICollection<Seat> Seats { get; set; }
         public long TheatreId { get; set; }
-        public virtual Theatre Theatre { get; set; }
+        public Theatre Theatre { get; set; }
     }
 }

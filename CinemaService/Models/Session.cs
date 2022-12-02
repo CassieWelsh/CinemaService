@@ -7,11 +7,11 @@
         public bool Is3d {get; set; }
 
         public long MovieId { get; set; }
-        public virtual Movie Movie { get; set; }
+        public Movie Movie { get; set; }
         public long HallId { get; set; }
-        public virtual Hall Hall { get; set; }
+        public Hall Hall { get; set; }
         public long ManagerId { get; set; } 
-        public virtual User User { get; set; }
+        public User User { get; set; }
         public virtual ICollection<Order> Orders { get; set; }
     }
 }
