@@ -39,7 +39,8 @@ namespace CinemaService.Controllers
             return View(
                 new MovieView()
                 {
-                    Genres = _context.Genre.ToList()
+                    Genres = _context.Genre.ToList(),
+                    Countries = _context.Country.ToList()
                 }
             );
         }
@@ -63,7 +64,8 @@ namespace CinemaService.Controllers
                     Description = movieView.Description,
                     Year = movieView.Year.GetValueOrDefault(),
                     Length = movieView.Length.GetValueOrDefault(),
-                    Genres = _context.Genre.Where(g => movieView.ChosenIds.Contains(g.Id)).ToArray()
+                    Genres = _context.Genre.Where(g => movieView.ChosenGenreIds.Contains(g.Id)).ToArray(),
+                    Countries = _context.Country.Where(c => movieView.ChosenCountryIds.Contains(c.Id)).ToArray()
                 });
                 _context.SaveChanges();
                 return Redirect("/Manager/Index");

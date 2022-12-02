@@ -16,6 +16,8 @@ namespace CinemaService.Models.ViewModel
         public int? Length { get; init; }
         [BindProperty]
         public List<Genre> Genres { get; init; }
-        public List<short> ChosenIds { get; init; }
+        public List<short> ChosenGenreIds { get; init; }
+        public List<Country> Countries { get; init; }
+        public List<short> ChosenCountryIds { get; init; }
     }
 }

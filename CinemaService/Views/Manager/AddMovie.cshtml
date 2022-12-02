@@ -36,10 +36,20 @@
         </div>
         <div style="margin: 15px 0; outline: 1px solid; width:150px; height:100px;">  
             <div style="overflow-y: auto; width:150px; height:100px;">
+                @foreach (var g in Model.Countries)
+                {
+                    <div class="form-group">
+                        <input type="checkbox" name="ChosenCountryIds" value="@g.Id"/> @g.Name <br>
+                    </div>
+                }
+            </div>
+        </div>
+        <div style="margin: 15px 0; outline: 1px solid; width:150px; height:100px;">  
+            <div style="overflow-y: auto; width:150px; height:100px;">
                 @foreach (var g in Model.Genres)
                 {
                     <div class="form-group">
-                        <input type="checkbox" name="ChosenIds" value="@g.Id"/> @g.Name <br>
+                        <input type="checkbox" name="ChosenGenreIds" value="@g.Id"/> @g.Name <br>
                     </div>
                 }
             </div>
