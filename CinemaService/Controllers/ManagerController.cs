@@ -2,6 +2,7 @@
 using CinemaService.Models.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace CinemaService.Controllers
 {
@@ -77,10 +78,73 @@ namespace CinemaService.Controllers
             }
         }
 
+        /// <summary>
+        /// Page to add a new session
+        /// </summary>
+        /// <returns>Session form page</returns>
+        /// <exception cref="ArgumentNullException"></exception>
         [HttpGet]
         public IActionResult AddSession()
         {
-            return View();
+            try
+            {
+                var claim = (User.Identity as ClaimsIdentity)?.Claims.Where(c => c.Type == "LOCAL AUTHORITY").FirstOrDefault();
+                if (claim is null) throw new ArgumentNullException();
+                var user = _context.User.Where(u => u.Email == claim.Value).First();
+                if (user is null) throw new ArgumentNullException();
+
+                return View(
+                    new SessionView()
+                    {
+                        SessionTime = DateTime.Now,
+                        Movies = _context.Movie.OrderBy(m => m.Title).ToList(),
+                        Halls = _context.Hall.Where(h => h.TheatreId == user.TheatreId).ToList()
+                    }
+                );
+            }
+            catch (InvalidOperationException e)
+            {
+                _logger.LogError(e.ToString());
+                return Redirect("/Cinema/Error");
+            }
+        }
+
+        /// <summary>
+        /// POST-method to add a session
+        /// </summary>
+        /// <param name="sessionView">Session view model</param>
+        /// <returns>Redirect to manager control panel</returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        [HttpPost]
+        public IActionResult AddSession(SessionView sessionView)
+        {
+            if (sessionView is null) throw new ArgumentNullException();
+
+            var claim = (User.Identity as ClaimsIdentity)?.Claims.Where(c => c.Type == "LOCAL AUTHORITY").FirstOrDefault();
+            if (claim is null) throw new ArgumentNullException();
+            var user = _context.User.Where(u => u.Email == claim.Value).First();
+            if (user is null) throw new ArgumentNullException();
+
+            try
+            {
+                var session = new Session()
+                {
+                    Date = sessionView.SessionTime.ToUniversalTime(),
+                    Is3d = sessionView.Is3d,
+                    MovieId = sessionView.MovieId,
+                    HallId = sessionView.HallId,
+                    UserId = user.Id
+                };
+
+                _context.Session.Add(session);
+                _context.SaveChanges();
+                return Redirect("/Manager/Index");
+            }
+            catch (InvalidOperationException e)
+            {
+                _logger.LogError(e.ToString());
+                return Redirect("/Cinema/Error");
+            }
         }
     }
 }
