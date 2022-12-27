@@ -110,7 +110,7 @@ namespace CinemaService.Controllers
                             PasswordHash = GenerateSHA256(model.Password),
                             FirstName = model.FirstName,
                             LastName = model.LastName,
-                            Birthdate = model.Birthdate,
+                            Birthdate = model.Birthdate.ToUniversalTime(),
                             RegisterDate = DateTime.UtcNow,
                             Role = UserRole.Customer
                         };

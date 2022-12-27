@@ -7,7 +7,7 @@
         public string PasswordHash { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public DateOnly Birthdate { get; set; }
+        public DateTime Birthdate { get; set; }
         public DateTime RegisterDate { get; set; }
         public UserRole Role { get; set; }
 

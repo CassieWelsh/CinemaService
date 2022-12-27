@@ -14,8 +14,8 @@ namespace CinemaService.Models.ViewModel
         public string LastName { get; init; }
 
         [Required(ErrorMessage = "Не указана дата рождения")]
-        [DataType(DataType.Date)]
-        public DateOnly Birthdate { get; init; }
+        //[DataType(DataType.Date)]
+        public DateTime Birthdate { get; init; }
 
         [Required(ErrorMessage = "Не указан пароль")]
         [DataType(DataType.Password)]
