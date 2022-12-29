@@ -1,0 +1,28 @@
+﻿@model OrderView
+@{
+    ViewData["Title"] = "Order";
+}
+
+@if (Model.Session.Date >= DateTime.Now.ToUniversalTime())
+{
+    <h1>@Model.Movie.Title</h1>
+
+    <h3>Дата: @Model.Session.Date</h3>
+                                 
+    int counter = 0;
+    @for (int i = 0; i < Model.Session.Hall.Rows; i++)
+    {
+        for (int j = 0; j < Model.Session.Hall.SeatsPerRow; j++)
+        {
+                <div>
+                    @Model.Seats[counter].Seat.Row, @Model.Seats[counter].Seat.Number
+                </div>
+            counter++;
+        }
+    }
+}
+else
+{
+    <h2>Не удалось отобразить сеанс</h2>
+    <h3>Запрашиваемый сеанс не найден (закончился или отменен</h3>
+}

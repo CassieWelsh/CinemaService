@@ -1,8 +1,34 @@
-﻿@{
+﻿@model IndexPageView
+@{
     ViewData["Title"] = "Home Page";
 }
 
+<style>
+    .asd{
+      height: 100px;
+      background: grey;
+      border-radius: 8px;
+    }
+
+    .card-block {
+        padding: 5px;
+        cursor: pointer;
+        text-decoration: none;
+        color: black
+    }
+</style>
+
 <div class="text-center">
-    <h1 class="display-4"><img src="~/megahorosh.gif" width=350px alt="поставьте 5 пж"/></h1>
-    <p>Welcome to the Cinema</p>
+    <h1 class="display-4"><img src="~/megahorosh.gif" width=150x alt="поставьте 5 пж"/></h1>
+    <p>Добро пожаловать в кинотеатр! Приятного просмотра :)</p>
+    <div class="row">
+        @foreach (var m in Model.Movies)
+        {
+            <a class="col-md-4 col-sm-6 card-block" asp-controller="Cinema" asp-action="SessionList" asp-route-movieId = "@m.Id">
+                <div class="asd">
+                    @m.Title
+                </div>
+            </a>
+        }
+    </div>
 </div>

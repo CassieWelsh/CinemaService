@@ -1,0 +1,38 @@
+﻿@model SessionListView
+@{
+    ViewData["Title"] = "SessionList";
+}
+
+<h3>Список сеансов на фильм "@Model.Movie.Title"</h3>
+
+<style>
+    .asd{
+      height: 75px;
+      background: grey;
+      border-radius: 8px;
+    }
+
+    .filmsList {
+        gap: 15px
+    }
+
+    .card-block {
+        padding: 5px;
+        cursor: pointer;
+        text-decoration: none;
+        color: black
+    }
+</style>
+
+<div class="text-center">
+    <div class="row">
+        @foreach (var s in Model.Sessions)
+        {
+            <a class="col-md-2 col-sm-6 card-block" asp-controller="Cinema" asp-action="Order" asp-route-sessionId="@s.Id">
+                <div class="asd">
+                    @s.Date
+                </div>
+            </a>
+        }
+    </div>
+</div>
