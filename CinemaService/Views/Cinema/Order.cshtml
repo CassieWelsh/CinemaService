@@ -3,26 +3,42 @@
     ViewData["Title"] = "Order";
 }
 
+<style>
+    td {
+        border: 1px solid grey;
+    }
+</style>
+
 @if (Model.Session.Date >= DateTime.Now.ToUniversalTime())
 {
     <h1>@Model.Movie.Title</h1>
 
     <h3>Дата: @Model.Session.Date</h3>
-                                 
-    int counter = 0;
-    @for (int i = 0; i < Model.Session.Hall.Rows; i++)
-    {
-        for (int j = 0; j < Model.Session.Hall.SeatsPerRow; j++)
-        {
-                <div>
-                    @Model.Seats[counter].Seat.Row, @Model.Seats[counter].Seat.Number
-                </div>
-            counter++;
-        }
-    }
+
+    <form asp-controller="Cinema" asp-action="Order">
+        <table>
+            @{
+                int counter = 0;
+                for (int i = 0; i < Model.Session.Hall.Rows; i++)
+                {
+                    <tr>
+                        @for (int j = 0; j < Model.Session.Hall.SeatsPerRow; j++)
+                        {
+                            <td>
+                                @{ var seatView = Model.Seats[counter]; }
+                                <input type="checkbox" name="ChosenSeatIds" value="@seatView.Seat.Id" @(seatView.Available ? "" : "disabled")/>
+                                @seatView.Seat.Row, @seatView.Seat.Number
+                            </td>
+                            counter++;
+                        }
+                    </tr>
+                }
+            }
+        </table>
+    </form>
 }
 else
 {
     <h2>Не удалось отобразить сеанс</h2>
-    <h3>Запрашиваемый сеанс не найден (закончился или отменен</h3>
+    <h3>Запрашиваемый сеанс не найден (закончился или отменен)</h3>
 }

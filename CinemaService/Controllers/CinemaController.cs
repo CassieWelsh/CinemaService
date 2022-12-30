@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using CinemaService.Models.ViewModel.OrderViews;
 
 namespace CinemaService.Controllers
@@ -54,8 +55,8 @@ namespace CinemaService.Controllers
                 {
                     Seat = s,
                     Available = !_context.Ticket
-                        .Include(t => t.Seat)
-                        .Any(t => t.Seat.Number == s.Number && t.Seat.Row == s.Row)
+                        .Include(t => t.Order)
+                        .Any(t => t.SeatId == s.Id && t.Order.SessionId == session.Id)
                 })
                 .ToList();
 

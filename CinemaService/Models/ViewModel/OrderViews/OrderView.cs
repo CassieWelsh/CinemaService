@@ -5,5 +5,6 @@
         public Movie Movie { get; set; }
         public Session Session { get; set; }
         public IList<SeatView> Seats { get; set; }
+        public IList<long> ChosenSeatIds { get; set; }
     }
 }
