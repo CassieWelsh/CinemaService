@@ -1,0 +1,34 @@
+﻿@model PaymentView
+@using System.Security.Claims;
+
+<h2>Оплата</h2>
+
+<form asp-controller="Cinema" asp-action="Payment" method="post">
+    <input type="hidden" asp-for="@Model.Order.Id" value="@Model.Order.Id"/>
+    <input type="hidden" asp-for="@Model.IsCancel" value="false"/>
+    <h4>Список билетов</h4>
+    @foreach (var t in Model.Order.Tickets)
+    {
+        <div>
+            Ряд: @t.Seat.Row, Место: @t.Seat.Number, Стоимость: @t.Cost
+        </div>
+    }
+    
+    @if (!User.Identity.IsAuthenticated)
+    {
+        <label asp-for="@Model.Email">Введите почту для получения данных о билете</label>
+        <input type="text" asp-for="@Model.Email"/>  
+    }
+    else
+    {
+        <input type="hidden" asp-for="@Model.Email" value="(@((User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "LOCAL AUTHORITY"))"/>  
+    }
+
+    <div>К оплате: @Model.Order.Tickets.Sum(t => t.Cost)</div>
+    <input type="submit" value="Оплатить" />
+</form>
+<form asp-controller="Cinema" asp-action="Payment" method="post">
+    <input type="hidden" asp-for="@Model.Order.Id" value="@Model.Order.Id"/>
+    <input type="hidden" asp-for="@Model.IsCancel" value="true"/>
+    <input type="submit" value="Отменить" />
+</form>

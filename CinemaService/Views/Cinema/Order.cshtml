@@ -16,25 +16,34 @@
     <h3>Дата: @Model.Session.Date</h3>
 
     <form asp-controller="Cinema" asp-action="Order">
+        <input type="hidden" asp-for="Session.Id" value=@Model.Session.Id/>
+        <input type="hidden" asp-for="Session.Is3d" value=@Model.Session.Is3d/>
         <table>
             @{
                 int counter = 0;
                 for (int i = 0; i < Model.Session.Hall.Rows; i++)
                 {
                     <tr>
+                        <td width="20px">
+                            @i
+                        </td>
                         @for (int j = 0; j < Model.Session.Hall.SeatsPerRow; j++)
                         {
                             <td>
                                 @{ var seatView = Model.Seats[counter]; }
                                 <input type="checkbox" name="ChosenSeatIds" value="@seatView.Seat.Id" @(seatView.Available ? "" : "disabled")/>
-                                @seatView.Seat.Row, @seatView.Seat.Number
+                                @(Model.Session.Is3d ? seatView.Seat.Type.Cost3d : seatView.Seat.Type.Cost2d)₽
                             </td>
                             counter++;
                         }
+                        <td width="20px">
+                            @i
+                        </td>
                     </tr>
                 }
             }
-        </table>
+        </table> <br/>
+        <input type="submit" value="Оформить заказ"/>
     </form>
 }
 else

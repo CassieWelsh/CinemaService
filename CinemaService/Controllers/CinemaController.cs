@@ -5,73 +5,139 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Claims;
 using CinemaService.Models.ViewModel.OrderViews;
 
-namespace CinemaService.Controllers
+namespace CinemaService.Controllers;
+
+public class CinemaController : Controller
 {
-    public class CinemaController : Controller
+    private readonly ILogger<CinemaController> _logger;
+    private readonly CinemaContext _context;
+
+    public CinemaController(ILogger<CinemaController> logger, CinemaContext context)
     {
-        private readonly ILogger<CinemaController> _logger;
-        private readonly CinemaContext _context;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+    }
 
-        public CinemaController(ILogger<CinemaController> logger, CinemaContext context)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-        }
+    public IActionResult Index()
+    {
+        var movies = _context.Session.Include(s => s.Movie).Select(s => s.Movie).AsEnumerable()
+            .DistinctBy(m => m.Id);
+        return View(new IndexPageView() { Movies = movies });
+    }
 
-        public IActionResult Index()
-        {
-            var movies = _context.Session.Include(s => s.Movie).Select(s => s.Movie).AsEnumerable().DistinctBy(m => m.Id);
-            return View(new IndexPageView() { Movies = movies });
-        }
+    [HttpGet]
+    [Route("/Cinema/SessionList/{movieId}")]
+    public IActionResult SessionList(long movieId)
+    {
+        var sessions = _context.Session.Where(s => s.MovieId == movieId && DateTime.Now.ToUniversalTime() < s.Date);
+        var movie = _context.Movie.Single(m => m.Id == movieId);
+        return View(new SessionListView() { Movie = movie, Sessions = sessions });
+    }
 
-        [HttpGet]
-        [Route("/Cinema/SessionList/{movieId}")]
-        public IActionResult SessionList(long movieId)
-        {
-            var sessions = _context.Session.Where(s => s.MovieId == movieId && DateTime.Now.ToUniversalTime() < s.Date);
-            var movie = _context.Movie.Single(m => m.Id == movieId);
-            return View(new SessionListView() { Movie = movie, Sessions = sessions });
-        }
+    [HttpGet]
+    [Route("/Cinema/Order/{sessionId}")]
+    public IActionResult Order(long sessionId)
+    {
+        var movie = _context.Session
+            .Where(s => s.Id == sessionId)
+            .Include(s => s.Movie)
+            .Select(s => s.Movie)
+            .Single();
 
-        [HttpGet]
-        [Route("/Cinema/Order/{sessionId}")]
-        public IActionResult Order(long sessionId)
-        {
-            var movie = _context.Session
-                .Where(s => s.Id == sessionId)
-                .Include(s => s.Movie)
-                .Select(s => s.Movie)
-                .Single();
-            
-            var session = _context.Session
-                .Include(s => s.Hall)
-                .Single(s => s.Id == sessionId);
+        var session = _context.Session
+            .Include(s => s.Hall)
+            .Single(s => s.Id == sessionId);
 
-            var seats = _context.Seat
-                .Where(s => s.HallId == session.HallId)
-                .Select(s => new SeatView()
-                {
-                    Seat = s,
-                    Available = !_context.Ticket
-                        .Include(t => t.Order)
-                        .Any(t => t.SeatId == s.Id && t.Order.SessionId == session.Id)
-                })
-                .ToList();
-
-            return View(new OrderView()
+        var seats = _context.Seat
+            .Include(s => s.Type)
+            .Where(s => s.HallId == session.HallId)
+            .Select(s => new SeatView()
             {
-                Movie = movie,
-                Session = session,
-                Seats = seats
-            });
+                Seat = s,
+                Available = !_context.Ticket
+                    .Include(t => t.Order)
+                    .Any(t => t.SeatId == s.Id && t.Order.SessionId == session.Id)
+            })
+            .ToList();
+
+        return View(new OrderView()
+        {
+            Movie = movie,
+            Session = session,
+            Seats = seats
+        });
+    }
+
+    [HttpPost]
+    public IActionResult Order(OrderView orderView)
+    {
+        if (orderView is null) throw new ArgumentNullException(nameof(orderView));
+
+        User? user = null;
+        if (User.Identity.IsAuthenticated)
+        {
+            var emailClaim = (User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "LOCAL AUTHORITY");
+            if (emailClaim is null) throw new ArgumentNullException();
+            user = _context.User.First(u => u.Email == emailClaim.Value);
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        var purchaseDate = DateTime.Now.ToUniversalTime();
+        var tickets = new List<Ticket>();
+        var order = new Order()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            PurchaseDate = purchaseDate,
+            Session = _context.Session.First(s => s.Id == orderView.Session.Id),
+            State = OrderState.Created,
+            Tickets = tickets,
+            User = user
+        };
+
+        foreach (var seatId in orderView.ChosenSeatIds)
+        {
+            tickets.Add(new Ticket()
+                {
+                    PurchaseDate = purchaseDate,
+                    Seat = _context.Seat.First(s => s.Id == seatId),
+                    Order = order,
+                    Cost = _context.Seat
+                        .Include(s => s.Type)
+                        .Where(s => s.Id == seatId)
+                        .Select(s => orderView.Session.Is3d ? s.Type.Cost3d : s.Type.Cost2d)
+                        .Single()
+                }
+            );
         }
+
+        _context.Order.Add(order);
+        _context.SaveChanges();
+
+        return View("Payment", new PaymentView() { Order = order });
+    }
+
+    [HttpPost("/Cinema/confirmPayment")]
+    public IActionResult Payment(PaymentView paymentView)
+    {
+        var order = _context.Order.First(o => o.Id == paymentView.Order.Id);
+        if (paymentView.IsCancel)
+        {
+            order.State = OrderState.Cancelled;
+            var tickets = _context.Ticket.Where(t => t.OrderId == order.Id);
+            _context.Ticket.RemoveRange(tickets);
+        }
+        else
+        {
+            order.State = OrderState.Refundable;
+        }
+        _context.SaveChanges();
+        return Redirect("/");
+    }
+
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
+    {
+        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }

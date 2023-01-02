@@ -3,7 +3,6 @@
     ViewData["Title"] = "SessionList";
 }
 
-<h3>Список сеансов на фильм "@Model.Movie.Title"</h3>
 
 <style>
     .asd{
@@ -20,15 +19,25 @@
     }
 </style>
 
-<div class="text-center">
-    <div class="row">
-        @foreach (var s in Model.Sessions)
-        {
-            <a class="col-md-2 col-sm-6 card-block" asp-controller="Cinema" asp-action="Order" asp-route-sessionId="@s.Id">
-                <div class="asd">
-                    @s.Date
-                </div>
-            </a>
-        }
+<h1>@Model.Movie.Title</h1>
+
+@if (Model.Sessions.Count() != 0)
+{
+    <h3>Список сеансов на фильм "@Model.Movie.Title"</h3>
+    <div class="text-center">
+        <div class="row">
+            @foreach (var s in Model.Sessions)
+            {
+                <a class="col-md-2 col-sm-6 card-block" asp-controller="Cinema" asp-action="Order" asp-route-sessionId="@s.Id">
+                    <div class="asd">
+                        @s.Date
+                    </div>
+                </a>
+            }
+        </div>
     </div>
-</div>
+}
+else
+{
+    <h4>Сеансы на выбранный фильм отсутствуют</h4>
+}
