@@ -1,3 +1,24 @@
-﻿@model dynamic
+﻿@model RefundView
 
-<h2>Отмена заказа</h2>
+<h2>Отмена заказа №@Model.Order.Id</h2>
+
+@if (Model.Order.State == OrderState.Refundable)
+{
+    <form asp-controller="Cinema" asp-action="Refund" method="post">
+        <h4>Выберите места для возврата</h4>
+        <input type="hidden" asp-for="@Model.Order.Id" value="@Model.Order.Id"/>
+        @foreach (var ticket in Model.Order.Tickets)
+        {
+            <div>
+                Ряд: @ticket.Seat.Row, Место: @ticket.Seat.Number, Стоимость: @ticket.Cost
+                <input type="checkbox" name="RefundTickets" value="@ticket.Id"/>
+            </div>
+        }
+
+        <input type="submit" value="Вернуть"/>
+    </form>
+}
+else
+{
+    <h4>Невозможно оформить возврат для данного заказа (до начала сеанса осталось меньше 30 минут, либо заказ недоступен)</h4>
+}

@@ -126,7 +126,7 @@ public class CinemaController : Controller
             .Include(o => o.Tickets)
             .ThenInclude(o => o.Seat)
             .First(o => o.Id == paymentView.Order.Id);
-        
+
         if (paymentView.IsCancel)
         {
             order.State = OrderState.Cancelled;
@@ -135,6 +135,7 @@ public class CinemaController : Controller
             {
                 ticket.State = TicketState.Cancelled;
             }
+
             _context.Ticket.UpdateRange(tickets);
         }
         else
@@ -147,9 +148,47 @@ public class CinemaController : Controller
         return Redirect("/");
     }
 
-    [HttpGet]
-    public IActionResult Refund(long sessionId)
+    [HttpGet("/Cinema/Refund/{orderId}")]
+    public IActionResult Refund(long orderId)
     {
-        return View();
+        var order = _context.Order
+            .Include(o => o.Tickets)
+            .ThenInclude(t => t.Seat)
+            .First(o => o.Id == orderId);
+
+        return View(new RefundView() { Order = order });
+    }
+
+    [HttpPost]
+    public IActionResult Refund(RefundView view)
+    {
+        var tickets = _context.Ticket.Where(t => t.OrderId == view.Order.Id);
+        var order = _context.Order.First(o => o.Id == view.Order.Id);
+        order.State = OrderState.Cancelled;
+
+        var newOrder = new Order()
+        {
+            PurchaseDate = DateTime.Now.ToUniversalTime(),
+            SessionId = order.SessionId,
+            State = OrderState.Refundable,
+            UserId = order.UserId ?? null,
+        };
+        
+        foreach (var ticket in tickets)
+        {
+            if (view.RefundTickets.Contains(ticket.Id))
+            {
+                ticket.State = TicketState.Cancelled;
+            }
+            else
+            {
+                ticket.Order = newOrder;
+            }
+        }
+
+
+        _context.SaveChanges();
+
+        return Redirect("/");
     }
 }

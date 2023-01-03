@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Mail;
+using System.Text;
 using CinemaService.Models;
 
 namespace CinemaService.Mail;
@@ -34,8 +35,16 @@ public class YandexMail : IEmail
         {
             mailBody += $"Ряд: {ticket.Seat.Row}, Место: {ticket.Seat.Number}, Стоимость: {ticket.Cost}₽\n";
         }
+
+        mailBody += $"Ссылка для управления заказом: https://localhost:7074/Cinema/Refund/{order.Id}";
         
-        var mail = new MailMessage(_senderMail, recipientMail, "Информация о билетах", mailBody);
+        var mail = new MailMessage(new MailAddress(_senderMail, "CinemaService"), new MailAddress(recipientMail))
+        {
+            Subject = "Информация о билетах",
+            SubjectEncoding = Encoding.UTF8,
+            Body = mailBody,
+            BodyEncoding = Encoding.UTF8
+        };
         _client.Send(mail);
     }
 }
