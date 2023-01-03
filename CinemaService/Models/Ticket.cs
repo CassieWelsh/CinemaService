@@ -5,6 +5,7 @@
         public long Id { get; set; }
         public DateTime PurchaseDate { get; set; }
         public decimal Cost { get; set; }
+        public TicketState State { get; set; }
 
         public long SeatId { get; set; }
         public Seat Seat { get; set; }

@@ -1,11 +1,9 @@
 ﻿using CinemaService.Models;
 using CinemaService.Models.ViewModel;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
+using CinemaService.Mail;
 using CinemaService.Models.ViewModel.OrderViews;
 
 namespace CinemaService.Controllers;
@@ -14,11 +12,13 @@ public class CinemaController : Controller
 {
     private readonly ILogger<CinemaController> _logger;
     private readonly CinemaContext _context;
+    private readonly IEmail _mail;
 
-    public CinemaController(ILogger<CinemaController> logger, CinemaContext context)
+    public CinemaController(ILogger<CinemaController> logger, CinemaContext context, IEmail email)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _context = context ?? throw new ArgumentNullException(nameof(context));
+        _mail = email ?? throw new ArgumentNullException(nameof(email));
     }
 
     public IActionResult Index()
@@ -59,7 +59,7 @@ public class CinemaController : Controller
                 Seat = s,
                 Available = !_context.Ticket
                     .Include(t => t.Order)
-                    .Any(t => t.SeatId == s.Id && t.Order.SessionId == session.Id)
+                    .Any(t => t.SeatId == s.Id && t.Order.SessionId == session.Id && t.State == TicketState.Active)
             })
             .ToList();
 
@@ -102,6 +102,7 @@ public class CinemaController : Controller
                     PurchaseDate = purchaseDate,
                     Seat = _context.Seat.First(s => s.Id == seatId),
                     Order = order,
+                    State = TicketState.Active,
                     Cost = _context.Seat
                         .Include(s => s.Type)
                         .Where(s => s.Id == seatId)
@@ -120,24 +121,35 @@ public class CinemaController : Controller
     [HttpPost("/Cinema/confirmPayment")]
     public IActionResult Payment(PaymentView paymentView)
     {
-        var order = _context.Order.First(o => o.Id == paymentView.Order.Id);
+        var order = _context.Order
+            .Include(o => o.Session)
+            .Include(o => o.Tickets)
+            .ThenInclude(o => o.Seat)
+            .First(o => o.Id == paymentView.Order.Id);
+        
         if (paymentView.IsCancel)
         {
             order.State = OrderState.Cancelled;
             var tickets = _context.Ticket.Where(t => t.OrderId == order.Id);
-            _context.Ticket.RemoveRange(tickets);
+            foreach (var ticket in tickets)
+            {
+                ticket.State = TicketState.Cancelled;
+            }
+            _context.Ticket.UpdateRange(tickets);
         }
         else
         {
             order.State = OrderState.Refundable;
+            _mail.SendOrderInfo(paymentView.Email, order);
         }
+
         _context.SaveChanges();
         return Redirect("/");
     }
 
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
+    [HttpGet]
+    public IActionResult Refund(long sessionId)
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        return View();
     }
 }
