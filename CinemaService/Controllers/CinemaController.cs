@@ -32,7 +32,20 @@ public class CinemaController : Controller
     [Route("/Cinema/SessionList/{movieId}")]
     public IActionResult SessionList(long movieId)
     {
-        var sessions = _context.Session.Where(s => s.MovieId == movieId && DateTime.Now.ToUniversalTime() < s.Date);
+        var sessions = _context.Session
+            .Where(s => s.MovieId == movieId && DateTime.Now.ToUniversalTime() < s.Date)
+            .OrderBy(s => s.Date)
+            .Select(s => new Session()
+                {
+                    Id = s.Id,
+                    Date = s.Date.ToLocalTime(),
+                    HallId = s.HallId,
+                    Is3d = s.Is3d,
+                    MovieId = s.MovieId,
+                    UserId = s.UserId
+                }
+            );
+
         var movie = _context.Movie.Single(m => m.Id == movieId);
         return View(new SessionListView() { Movie = movie, Sessions = sessions });
     }
@@ -173,7 +186,7 @@ public class CinemaController : Controller
             State = OrderState.Refundable,
             UserId = order.UserId ?? null,
         };
-        
+
         foreach (var ticket in tickets)
         {
             if (view.RefundTickets.Contains(ticket.Id))
@@ -185,7 +198,6 @@ public class CinemaController : Controller
                 ticket.Order = newOrder;
             }
         }
-
 
         _context.SaveChanges();
 
