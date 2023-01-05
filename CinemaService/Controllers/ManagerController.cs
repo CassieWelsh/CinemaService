@@ -3,6 +3,8 @@ using CinemaService.Models.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using CinemaService.Models.ViewModel.DurationModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace CinemaService.Controllers;
 
@@ -88,7 +90,8 @@ public class ManagerController : Controller
     {
         try
         {
-            var claim = (User.Identity as ClaimsIdentity)?.Claims.Where(c => c.Type == "LOCAL AUTHORITY").FirstOrDefault();
+            var claim = (User.Identity as ClaimsIdentity)?.Claims.Where(c => c.Type == "LOCAL AUTHORITY")
+                .FirstOrDefault();
             if (claim is null) throw new ArgumentNullException();
             var user = _context.User.Where(u => u.Email == claim.Value).First();
             if (user is null) throw new ArgumentNullException();
@@ -145,5 +148,40 @@ public class ManagerController : Controller
             _logger.LogError(e.ToString());
             return Redirect("/Cinema/Error");
         }
+    }
+
+    [HttpGet]
+    public IActionResult Stats()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    public IEnumerable<SellsModel> DurationSells(DurationModel model)
+    {
+        if (model.From > model.To)
+        {
+            return new[] { new SellsModel { Movie = "Некорректная дата", Date = DateTime.MaxValue } };
+        }
+
+        var sessionGroups = _context.Order
+            .Where(o =>
+                (o.State == OrderState.Refundable || o.State == OrderState.NonRefundable) &&
+                o.PurchaseDate.ToLocalTime() >= model.From && o.PurchaseDate.ToLocalTime() <= model.To)
+            .Include(o => o.Tickets)
+            .Include(o => o.Session)
+            .ThenInclude(s => s.Movie)
+            .AsEnumerable()
+            .GroupBy(o => o.SessionId);
+
+        var result = sessionGroups.Select(s => new SellsModel()
+        {
+            SessionId = s.First().SessionId,
+            Movie = s.First().Session.Movie.Title,
+            Date = s.First().Session.Date,
+            Summary = s.SelectMany(ss => ss.Tickets).Sum(t => t.Cost)
+        });
+
+        return result;
     }
 }

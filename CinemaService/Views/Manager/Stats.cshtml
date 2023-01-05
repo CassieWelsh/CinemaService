@@ -1,0 +1,66 @@
+﻿@model DurationModel
+
+<h1>Статистика продаж</h1>
+
+<div>
+    <label asp-for="@Model.From">От</label>
+    <input id="from" asp-for="@Model.From" asp-format="{0:yyyy-MM-ddTHH:mm}"/>
+    <label asp-for="@Model.To">До</label>
+    <input id="to" asp-for="@Model.To" asp-format="{0:yyyy-MM-ddTHH:mm}"/>
+    <input type="button" onclick="onButtonClick()" value="Отправить"/>
+</div>
+
+<br/>
+
+<table id="resultContainer" class="table">
+    <tr>
+        <td>ID сеанса</td>
+        <td>Название фильма</td>
+        <td>Дата сеанса</td>
+        <td>Суммарный доход за сеанс</td>
+    </tr>
+</table>
+
+<script>
+    let header = document.getElementById("resultContainer").innerHTML;
+
+    function onButtonClick() {
+        $.ajax({
+            url:"/Manager/DurationSells/",
+            type: "POST",
+            success: function (data) {
+                console.log(data);
+                document.getElementById("resultContainer").innerHTML = "";
+                
+                let total_sum = 0
+                data.forEach(sell => total_sum += parseFloat(sell["summary"]))
+                
+                document.getElementById("resultContainer").innerHTML += '<tr>' +
+                '<td></td>' + 
+                '<td></td>' + 
+                '<td>' + 'Суммарный доход со всех сеансов: ' + '</td>' +
+                '<td>' + total_sum + '₽' + '</td>' +
+                '</tr>';
+                
+                document.getElementById("resultContainer").innerHTML += header;
+                
+                
+                data.forEach(sell => {
+                    document.getElementById("resultContainer").innerHTML += '<tr>' +
+                    '<td>' + sell["sessionId"] + '</td>' + 
+                    '<td>' + sell["movie"] + '</td>' + 
+                    '<td>' + sell["date"] + '</td>' +
+                    '<td>' + sell["summary"] + '₽' + '</td>' +
+                    '</tr>';
+                });
+            },
+            data: {
+                   From: document.getElementById("from").value, 
+                   To: document.getElementById("to").value},
+            
+            error: function (){
+                alert("Error")
+            }
+        })
+    }
+</script>

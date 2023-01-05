@@ -232,6 +232,13 @@ public class CinemaController : Controller
                 .ThenInclude(s => s.Movie)
                 .OrderByDescending(o => o.PurchaseDate)
                 .ToList()
+                .Select(o =>
+                {
+                    var order = o;
+                    order.PurchaseDate = o.PurchaseDate.ToLocalTime();
+                    order.Session.Date = o.Session.Date.ToLocalTime();
+                    return order;
+                })
         };
         
         return View(orderListView);

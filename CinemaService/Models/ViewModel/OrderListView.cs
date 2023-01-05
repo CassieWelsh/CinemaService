@@ -2,5 +2,5 @@
 
 public class OrderListView
 {
-    public ICollection<Order> Orders;
+    public IEnumerable<Order> Orders;
 }
