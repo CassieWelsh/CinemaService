@@ -38,6 +38,7 @@ public class Worker : BackgroundService
                 _orderUpdater.UpdateOrders();
                 int delay = (int)(_context.Session.OrderBy(o => o.Date).First(o => o.Date.ToLocalTime() > DateTime.Now).Date.ToLocalTime() - DateTime.Now).TotalMilliseconds;
                 if (delay <= 0) delay = _defaultDelay;
+                _logger.LogInformation("Next update in {time} minutes", TimeSpan.FromMilliseconds(delay).TotalMinutes);
                 await Task.Delay(delay, stoppingToken);
             }
             catch (InvalidOperationException e)

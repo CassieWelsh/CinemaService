@@ -1,28 +1,31 @@
 ﻿@using System.Security.Claims
 
 <ul class="navbar-nav">
-@if (User.IsInRole("Manager"))
-{
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-area="" asp-controller="Manager" asp-action="Index">Manager_Panel</a>
-    </li>
-}
-@if (User.Identity.IsAuthenticated)
-{
-    <li class="nav-item">
-        <a class="nav-link text-dark" style="font-weight:bold" title="Manage">Hello @User.Identity?.Name</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-area="" asp-controller="Auth" asp-action="Logout">Logout</a>
-    </li>
-}
-else
-{
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-area="" asp-controller="Auth" asp-action="Register">Register</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-area="" asp-controller="Auth" asp-action="Login">Login</a>
-    </li>
-}
+    @if (User.IsInRole("Manager"))
+    {
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="Manager" asp-action="Index">Панель менеджера</a>
+        </li>
+    }
+    @if (User.Identity.IsAuthenticated)
+    {
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="Cinema" asp-action="OrderList">Список заказов</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" style="font-weight:bold" title="Manage">Hello @User.Identity?.Name</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="Auth" asp-action="Logout">Выйти</a>
+        </li>
+    }
+    else
+    {
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="Auth" asp-action="Register">Зарегистрироваться</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="Auth" asp-action="Login">Войти</a>
+        </li>
+    }
 </ul>

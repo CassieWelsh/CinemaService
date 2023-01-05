@@ -1,4 +1,6 @@
-﻿namespace CinemaService.Models
+﻿using System.ComponentModel;
+
+namespace CinemaService.Models
 {
     public enum OrderState
     {

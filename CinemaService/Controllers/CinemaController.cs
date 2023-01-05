@@ -128,9 +128,16 @@ public class CinemaController : Controller
         _context.Order.Add(order);
         _context.SaveChanges();
 
-        return View("Payment", new PaymentView() { Order = order });
+        return View("Payment", new PaymentView { Order = order });
     }
 
+    [HttpGet("/Cinema/Repay/{orderId}")]
+    public IActionResult Repay(long orderId)
+    {
+        var order = _context.Order.Include(o => o.Tickets).ThenInclude(t => t.Seat).First(o => o.Id == orderId);
+        return View("Payment", new PaymentView { Order = order });
+    } 
+    
     [HttpPost("/Cinema/confirmPayment")]
     public IActionResult Payment(PaymentView paymentView)
     {
@@ -202,5 +209,31 @@ public class CinemaController : Controller
         _context.SaveChanges();
 
         return Redirect("/");
+    }
+
+    [HttpGet]
+    public IActionResult OrderList()
+    {
+        User user = null;
+        if (User.Identity.IsAuthenticated)
+        {
+            var emailClaim = (User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "LOCAL AUTHORITY");
+            if (emailClaim is null) throw new ArgumentNullException();
+            user = _context.User.First(u => u.Email == emailClaim.Value);
+        }
+        
+        if (user is null) return Redirect("/Cinema/Error");
+
+        var orderListView = new OrderListView()
+        {
+            Orders = _context.Order
+                .Where(o => o.UserId == user.Id)
+                .Include(o => o.Session)
+                .ThenInclude(s => s.Movie)
+                .OrderByDescending(o => o.PurchaseDate)
+                .ToList()
+        };
+        
+        return View(orderListView);
     }
 }

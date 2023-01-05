@@ -21,7 +21,7 @@
     }
     else
     {
-        <input type="hidden" asp-for="@Model.Email" value="(@((User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "LOCAL AUTHORITY"))"/>  
+        <input type="hidden" asp-for="@Model.Email" value="@((User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "LOCAL AUTHORITY").Value)"/>  
     }
 
     <div>К оплате: @Model.Order.Tickets.Sum(t => t.Cost)</div>

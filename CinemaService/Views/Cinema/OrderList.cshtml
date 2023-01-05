@@ -1,0 +1,37 @@
+﻿@model OrderListView
+
+@{
+    Layout = "_Layout";
+}
+
+<h2>Список заказов</h2>
+
+<table class="table">
+    <tr>
+        <td>Id</td>
+        <td>Фильм</td>
+        <td>Дата сеанса</td>
+        <td>Состояние</td>
+        <td>Дата создания</td>
+        <td>Сеанс</td>
+    </tr>
+    @foreach (var order in @Model.Orders)
+    {
+        <tr>
+            <td>@order.Id</td>
+            <td>@order.Session.Movie.Title</td>
+            <td>@order.Session.Date</td>
+            <td>@order.State</td>
+            <td>@order.PurchaseDate.ToLocalTime()</td>
+            <td><a asp-controller="Cinema" asp-action="Order" asp-route-sessionId="@order.SessionId">@order.SessionId</a></td>
+            @if (order.State == OrderState.Refundable)
+            {
+                <td> <a asp-controller="Cinema" asp-action="Refund" asp-route-orderId="@order.Id">Вернуть</a> </td>
+            }
+            @if (order.State == OrderState.Created)
+            {
+                <td> <a asp-controller="Cinema" asp-action="Repay" asp-route-orderId="@order.Id">Оплатить</a> </td>
+            } 
+        </tr>
+    }
+</table>
