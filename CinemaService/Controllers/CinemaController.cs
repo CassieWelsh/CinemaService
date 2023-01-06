@@ -139,6 +139,8 @@ public class CinemaController : Controller
     public IActionResult Order(OrderView orderView)
     {
         if (orderView is null) throw new ArgumentNullException(nameof(orderView));
+        if (orderView.ChosenSeatIds is null) return Redirect($"/Cinema/Order/{orderView.Session.Id}");
+        
         try
         {
             User? user = null;
@@ -224,7 +226,6 @@ public class CinemaController : Controller
                 .Include(o => o.Tickets)
                 .ThenInclude(o => o.Seat)
                 .First(o => o.Id == paymentView.Order.Id);
-
             if (paymentView.IsCancel)
             {
                 order.State = OrderState.Cancelled;
@@ -239,6 +240,7 @@ public class CinemaController : Controller
             else
             {
                 order.State = OrderState.Refundable;
+                if (User.Identity is { IsAuthenticated: false }) order.Email = paymentView.Email;
                 _mail.SendOrderInfo(paymentView.Email, order);
             }
 
@@ -293,7 +295,8 @@ public class CinemaController : Controller
                 PurchaseDate = DateTime.Now.ToUniversalTime(),
                 SessionId = order.SessionId,
                 State = OrderState.Refundable,
-                UserId = order.UserId ?? null,
+                UserId = order.UserId,
+                Email = order.Email
             };
 
             foreach (var ticket in tickets)
@@ -307,8 +310,12 @@ public class CinemaController : Controller
                     ticket.Order = newOrder;
                 }
             }
-
             _context.SaveChanges();
+
+            var userMail = newOrder.UserId == null ? newOrder.Email : _context.User.First(u => u.Id == newOrder.UserId).Email;
+            newOrder.Session = _context.Session.First(s => s.Id == newOrder.SessionId);
+            newOrder.Tickets = _context.Ticket.Where(t => t.OrderId == newOrder.Id).Include(t => t.Seat).ToList();
+            _mail.UpdateOrderInfo(userMail!, newOrder);
 
             return Redirect("/");
         }

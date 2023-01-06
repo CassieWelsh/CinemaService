@@ -47,4 +47,26 @@ public class YandexMail : IEmail
         };
         _client.Send(mail);
     }
+
+    public void UpdateOrderInfo(string recipientMail, Order order)
+    {
+        string mailBody = "Обновление заказа\n"+
+                          $"Дата и время сеанса: {order.Session.Date}\n" +
+                          (order.Tickets.Any() ? "Информация о билетах:\n" : "Заказ отменён\n");
+        
+        foreach (var ticket in order.Tickets)
+        {
+            mailBody += $"Ряд: {ticket.Seat.Row}, Место: {ticket.Seat.Number}, Стоимость: {ticket.Cost}₽\n";
+        }
+        
+        if (order.Tickets.Any()) mailBody += $"Ссылка для управления заказом: https://localhost:7074/Cinema/Refund/{order.Id}";
+        var mail = new MailMessage(new MailAddress(_senderMail, "CinemaService"), new MailAddress(recipientMail))
+        {
+            Subject = "Информация о билетах",
+            SubjectEncoding = Encoding.UTF8,
+            Body = mailBody,
+            BodyEncoding = Encoding.UTF8
+        };
+        _client.Send(mail);
+    }
 }
