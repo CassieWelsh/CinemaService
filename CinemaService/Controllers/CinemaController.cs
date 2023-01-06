@@ -1,10 +1,13 @@
-﻿using CinemaService.Models;
+﻿using System.Diagnostics;
+using CinemaService.Models;
 using CinemaService.Models.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using CinemaService.Mail;
 using CinemaService.Models.ViewModel.OrderViews;
+using NuGet.Protocol;
+using InvalidOperationException = System.InvalidOperationException;
 
 namespace CinemaService.Controllers;
 
@@ -14,6 +17,13 @@ public class CinemaController : Controller
     private readonly CinemaContext _context;
     private readonly IEmail _mail;
 
+    /// <summary>
+    /// Creates an instance of <see cref="CinemaController"/>.
+    /// </summary>
+    /// <param name="logger">A logger.</param>
+    /// <param name="context">Derived Entity framework class of <see cref="CinemaContext"/> type.</param>
+    /// <param name="email">Email sender.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="context"/>, <paramref name="logger"/> or <paramref name="email"/> is null.</exception>
     public CinemaController(ILogger<CinemaController> logger, CinemaContext context, IEmail email)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -21,226 +31,345 @@ public class CinemaController : Controller
         _mail = email ?? throw new ArgumentNullException(nameof(email));
     }
 
+    /// <summary>
+    /// Index page with movie list.
+    /// </summary>
+    /// <returns>Index page for the whole service</returns>
+    [HttpGet]
     public IActionResult Index()
     {
-        var movies = _context.Session.Include(s => s.Movie).Select(s => s.Movie).AsEnumerable()
-            .DistinctBy(m => m.Id);
-        return View(new IndexPageView() { Movies = movies });
+        try
+        {
+            var movies = _context.Session.Include(s => s.Movie).Select(s => s.Movie).AsEnumerable()
+                .DistinctBy(m => m.Id).ToArray();
+            return View(new IndexPageView() { Movies = movies });
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e.ToString());
+            return Redirect("/Cinema/Error");
+        }
     }
 
+    /// <summary>
+    /// Returns oncoming session list view for a movie.
+    /// </summary>
+    /// <param name="movieId">Movie id.</param>
     [HttpGet]
     [Route("/Cinema/SessionList/{movieId}")]
     public IActionResult SessionList(long movieId)
     {
-        var sessions = _context.Session
-            .Where(s => s.MovieId == movieId && DateTime.Now.ToUniversalTime() < s.Date)
-            .OrderBy(s => s.Date)
-            .Select(s => new Session()
-                {
-                    Id = s.Id,
-                    Date = s.Date.ToLocalTime(),
-                    HallId = s.HallId,
-                    Is3d = s.Is3d,
-                    MovieId = s.MovieId,
-                    UserId = s.UserId
-                }
-            );
+        try
+        {
+            var sessions = _context.Session
+                .Where(s => s.MovieId == movieId && DateTime.Now.ToUniversalTime() < s.Date)
+                .OrderBy(s => s.Date)
+                .Select(s => new Session()
+                    {
+                        Id = s.Id,
+                        Date = s.Date.ToLocalTime(),
+                        HallId = s.HallId,
+                        Is3d = s.Is3d,
+                        MovieId = s.MovieId,
+                        UserId = s.UserId
+                    }
+                );
 
-        var movie = _context.Movie.Single(m => m.Id == movieId);
-        return View(new SessionListView() { Movie = movie, Sessions = sessions });
+            var movie = _context.Movie.Single(m => m.Id == movieId);
+            return View(new SessionListView() { Movie = movie, Sessions = sessions });
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e.ToString());
+            return Redirect("/Cinema/Error");
+        }
     }
 
+    /// <summary>
+    /// Returns seat choosing page for session.
+    /// </summary>
+    /// <param name="sessionId">Session id.</param>
     [HttpGet]
     [Route("/Cinema/Order/{sessionId}")]
     public IActionResult Order(long sessionId)
     {
-        var movie = _context.Session
-            .Where(s => s.Id == sessionId)
-            .Include(s => s.Movie)
-            .Select(s => s.Movie)
-            .Single();
-
-        var session = _context.Session
-            .Include(s => s.Hall)
-            .Single(s => s.Id == sessionId);
-
-        var seats = _context.Seat
-            .Include(s => s.Type)
-            .Where(s => s.HallId == session.HallId)
-            .Select(s => new SeatView()
-            {
-                Seat = s,
-                Available = !_context.Ticket
-                    .Include(t => t.Order)
-                    .Any(t => t.SeatId == s.Id && t.Order.SessionId == session.Id && t.State == TicketState.Active)
-            })
-            .ToList();
-
-        return View(new OrderView()
+        try
         {
-            Movie = movie,
-            Session = session,
-            Seats = seats
-        });
+            var movie = _context.Session
+                .Where(s => s.Id == sessionId)
+                .Include(s => s.Movie)
+                .Select(s => s.Movie)
+                .Single();
+
+            var session = _context.Session
+                .Include(s => s.Hall)
+                .Single(s => s.Id == sessionId);
+
+            var seats = _context.Seat
+                .Include(s => s.Type)
+                .Where(s => s.HallId == session.HallId)
+                .Select(s => new SeatView()
+                {
+                    Seat = s,
+                    Available = !_context.Ticket
+                        .Include(t => t.Order)
+                        .Any(t => t.SeatId == s.Id && t.Order.SessionId == session.Id && t.State == TicketState.Active)
+                })
+                .ToList();
+
+            return View(new OrderView()
+            {
+                Movie = movie,
+                Session = session,
+                Seats = seats
+            });
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e.ToString());
+            return Redirect("/Cinema/Error");
+        }
     }
 
+    /// <summary>
+    /// Creates an order.
+    /// </summary>
+    /// <param name="orderView">Form model with order data.</param>
     [HttpPost]
     public IActionResult Order(OrderView orderView)
     {
         if (orderView is null) throw new ArgumentNullException(nameof(orderView));
-
-        User? user = null;
-        if (User.Identity.IsAuthenticated)
+        try
         {
-            var emailClaim = (User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "LOCAL AUTHORITY");
-            if (emailClaim is null) throw new ArgumentNullException();
-            user = _context.User.First(u => u.Email == emailClaim.Value);
+            User? user = null;
+            if (User.Identity.IsAuthenticated)
+            {
+                var emailClaim =
+                    (User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "LOCAL AUTHORITY");
+                if (emailClaim is null) throw new ArgumentNullException();
+                user = _context.User.First(u => u.Email == emailClaim.Value);
+            }
+
+            var purchaseDate = DateTime.Now.ToUniversalTime();
+            var tickets = new List<Ticket>();
+            var order = new Order()
+            {
+                PurchaseDate = purchaseDate,
+                Session = _context.Session.First(s => s.Id == orderView.Session.Id),
+                State = OrderState.Created,
+                Tickets = tickets,
+                User = user
+            };
+
+            foreach (var seatId in orderView.ChosenSeatIds)
+            {
+                tickets.Add(new Ticket()
+                    {
+                        PurchaseDate = purchaseDate,
+                        Seat = _context.Seat.First(s => s.Id == seatId),
+                        Order = order,
+                        State = TicketState.Active,
+                        Cost = _context.Seat
+                            .Include(s => s.Type)
+                            .Where(s => s.Id == seatId)
+                            .Select(s => orderView.Session.Is3d ? s.Type.Cost3d : s.Type.Cost2d)
+                            .Single()
+                    }
+                );
+            }
+
+            _context.Order.Add(order);
+            _context.SaveChanges();
+
+            return View("Payment", new PaymentView { Order = order });
         }
-
-        var purchaseDate = DateTime.Now.ToUniversalTime();
-        var tickets = new List<Ticket>();
-        var order = new Order()
+        catch (InvalidOperationException e)
         {
-            PurchaseDate = purchaseDate,
-            Session = _context.Session.First(s => s.Id == orderView.Session.Id),
-            State = OrderState.Created,
-            Tickets = tickets,
-            User = user
-        };
-
-        foreach (var seatId in orderView.ChosenSeatIds)
-        {
-            tickets.Add(new Ticket()
-                {
-                    PurchaseDate = purchaseDate,
-                    Seat = _context.Seat.First(s => s.Id == seatId),
-                    Order = order,
-                    State = TicketState.Active,
-                    Cost = _context.Seat
-                        .Include(s => s.Type)
-                        .Where(s => s.Id == seatId)
-                        .Select(s => orderView.Session.Is3d ? s.Type.Cost3d : s.Type.Cost2d)
-                        .Single()
-                }
-            );
+            _logger.LogError(e.ToString());
+            return Redirect("/Cinema/Error");
         }
-
-        _context.Order.Add(order);
-        _context.SaveChanges();
-
-        return View("Payment", new PaymentView { Order = order });
     }
 
+    /// <summary>
+    /// Opens repay page for unpaid order.
+    /// </summary>
+    /// <param name="orderId">Repayable order id.</param>
     [HttpGet("/Cinema/Repay/{orderId}")]
     public IActionResult Repay(long orderId)
     {
-        var order = _context.Order.Include(o => o.Tickets).ThenInclude(t => t.Seat).First(o => o.Id == orderId);
-        return View("Payment", new PaymentView { Order = order });
+        try
+        {
+            var order = _context.Order.Include(o => o.Tickets).ThenInclude(t => t.Seat).First(o => o.Id == orderId);
+            return View("Payment", new PaymentView { Order = order });
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e.ToString());
+            return Redirect("/Cinema/Error");
+        }
     } 
     
+    /// <summary>
+    /// Confirms order payment.
+    /// </summary>
+    /// <param name="paymentView">Payment form view model.</param>
+    /// <returns>Index page.</returns>
     [HttpPost("/Cinema/confirmPayment")]
     public IActionResult Payment(PaymentView paymentView)
     {
-        var order = _context.Order
-            .Include(o => o.Session)
-            .Include(o => o.Tickets)
-            .ThenInclude(o => o.Seat)
-            .First(o => o.Id == paymentView.Order.Id);
-
-        if (paymentView.IsCancel)
+        try
         {
-            order.State = OrderState.Cancelled;
-            var tickets = _context.Ticket.Where(t => t.OrderId == order.Id);
-            foreach (var ticket in tickets)
+            var order = _context.Order
+                .Include(o => o.Session)
+                .Include(o => o.Tickets)
+                .ThenInclude(o => o.Seat)
+                .First(o => o.Id == paymentView.Order.Id);
+
+            if (paymentView.IsCancel)
             {
-                ticket.State = TicketState.Cancelled;
-            }
+                order.State = OrderState.Cancelled;
+                var tickets = _context.Ticket.Where(t => t.OrderId == order.Id);
+                foreach (var ticket in tickets)
+                {
+                    ticket.State = TicketState.Cancelled;
+                }
 
-            _context.Ticket.UpdateRange(tickets);
-        }
-        else
-        {
-            order.State = OrderState.Refundable;
-            _mail.SendOrderInfo(paymentView.Email, order);
-        }
-
-        _context.SaveChanges();
-        return Redirect("/");
-    }
-
-    [HttpGet("/Cinema/Refund/{orderId}")]
-    public IActionResult Refund(long orderId)
-    {
-        var order = _context.Order
-            .Include(o => o.Tickets)
-            .ThenInclude(t => t.Seat)
-            .First(o => o.Id == orderId);
-
-        return View(new RefundView() { Order = order });
-    }
-
-    [HttpPost]
-    public IActionResult Refund(RefundView view)
-    {
-        var tickets = _context.Ticket.Where(t => t.OrderId == view.Order.Id);
-        var order = _context.Order.First(o => o.Id == view.Order.Id);
-        order.State = OrderState.Cancelled;
-
-        var newOrder = new Order()
-        {
-            PurchaseDate = DateTime.Now.ToUniversalTime(),
-            SessionId = order.SessionId,
-            State = OrderState.Refundable,
-            UserId = order.UserId ?? null,
-        };
-
-        foreach (var ticket in tickets)
-        {
-            if (view.RefundTickets.Contains(ticket.Id))
-            {
-                ticket.State = TicketState.Cancelled;
+                _context.Ticket.UpdateRange(tickets);
             }
             else
             {
-                ticket.Order = newOrder;
+                order.State = OrderState.Refundable;
+                _mail.SendOrderInfo(paymentView.Email, order);
             }
+
+            _context.SaveChanges();
+            return Redirect("/");
         }
-
-        _context.SaveChanges();
-
-        return Redirect("/");
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e.ToString());
+            return Redirect("/Cinema/Error");
+        }
     }
 
+    /// <summary>
+    /// Return refund page for a specified order.
+    /// </summary>
+    /// <param name="orderId">Refundable order id.</param>
+    [HttpGet("/Cinema/Refund/{orderId}")]
+    public IActionResult Refund(long orderId)
+    {
+        try
+        {
+            var order = _context.Order
+                .Include(o => o.Tickets)
+                .ThenInclude(t => t.Seat)
+                .First(o => o.Id == orderId);
+
+            return View(new RefundView() { Order = order });
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e.ToString());
+            return Redirect("/Cinema/Error");
+        }
+    }
+
+    /// <summary>
+    /// Refunds chosen tickets from order.
+    /// </summary>
+    /// <param name="view">Refund form view model.</param>
+    [HttpPost]
+    public IActionResult Refund(RefundView view)
+    {
+        try
+        {
+            var tickets = _context.Ticket.Where(t => t.OrderId == view.Order.Id);
+            var order = _context.Order.First(o => o.Id == view.Order.Id);
+            order.State = OrderState.Cancelled;
+
+            var newOrder = new Order()
+            {
+                PurchaseDate = DateTime.Now.ToUniversalTime(),
+                SessionId = order.SessionId,
+                State = OrderState.Refundable,
+                UserId = order.UserId ?? null,
+            };
+
+            foreach (var ticket in tickets)
+            {
+                if (view.RefundTickets.Contains(ticket.Id))
+                {
+                    ticket.State = TicketState.Cancelled;
+                }
+                else
+                {
+                    ticket.Order = newOrder;
+                }
+            }
+
+            _context.SaveChanges();
+
+            return Redirect("/");
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e.ToString());
+            return Redirect("/Cinema/Error");
+        }
+    }
+
+    /// <summary>
+    /// Returns order list page for a specified user.
+    /// </summary>
     [HttpGet]
     public IActionResult OrderList()
     {
-        User user = null;
-        if (User.Identity.IsAuthenticated)
+        try
         {
-            var emailClaim = (User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "LOCAL AUTHORITY");
-            if (emailClaim is null) throw new ArgumentNullException();
-            user = _context.User.First(u => u.Email == emailClaim.Value);
-        }
-        
-        if (user is null) return Redirect("/Cinema/Error");
+            User user = null;
+            if (User.Identity.IsAuthenticated)
+            {
+                var emailClaim =
+                    (User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "LOCAL AUTHORITY");
+                if (emailClaim is null) throw new ArgumentNullException();
+                user = _context.User.First(u => u.Email == emailClaim.Value);
+            }
 
-        var orderListView = new OrderListView()
+            if (user is null) return Redirect("/Cinema/Error");
+
+            var orderListView = new OrderListView()
+            {
+                Orders = _context.Order
+                    .Where(o => o.UserId == user.Id)
+                    .Include(o => o.Session)
+                    .ThenInclude(s => s.Movie)
+                    .OrderByDescending(o => o.PurchaseDate)
+                    .ToList()
+                    .Select(o =>
+                    {
+                        var order = o;
+                        order.PurchaseDate = o.PurchaseDate.ToLocalTime();
+                        order.Session.Date = o.Session.Date.ToLocalTime();
+                        return order;
+                    })
+            };
+
+            return View(orderListView);
+        }
+        catch (InvalidOperationException e)
         {
-            Orders = _context.Order
-                .Where(o => o.UserId == user.Id)
-                .Include(o => o.Session)
-                .ThenInclude(s => s.Movie)
-                .OrderByDescending(o => o.PurchaseDate)
-                .ToList()
-                .Select(o =>
-                {
-                    var order = o;
-                    order.PurchaseDate = o.PurchaseDate.ToLocalTime();
-                    order.Session.Date = o.Session.Date.ToLocalTime();
-                    return order;
-                })
-        };
-        
-        return View(orderListView);
+            _logger.LogError(e.ToString());
+            return Redirect("/Cinema/Error");
+        }
+    }
+    
+    /// <summary>
+    /// Returns error page.
+    /// </summary>
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
+    {
+        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }

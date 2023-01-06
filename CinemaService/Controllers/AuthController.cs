@@ -18,6 +18,12 @@ public class AuthController : Controller
     private readonly CinemaContext _context;
     private readonly ILogger<AuthController> _logger;
 
+    /// <summary>
+    /// Creates an instance of <see cref="AuthController"/>.
+    /// </summary>
+    /// <param name="context">Derived Entity framework class of <see cref="CinemaContext"/> type.</param>
+    /// <param name="logger">A logger.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="context"/> or <paramref name="logger"/> is null.</exception>
     public AuthController(CinemaContext context, ILogger<AuthController> logger)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
