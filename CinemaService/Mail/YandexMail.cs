@@ -67,6 +67,15 @@ public class YandexMail : IEmail
             Body = mailBody,
             BodyEncoding = Encoding.UTF8
         };
-        _client.Send(mail);
+        
+        try
+        {
+            _client.Send(mail);
+        }
+        catch (Exception e) when(e is InvalidOperationException ||
+                                 e is SmtpException)
+        {
+            UpdateOrderInfo(recipientMail, order);  
+        }
     }
 }
