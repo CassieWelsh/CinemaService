@@ -1,0 +1,14 @@
+﻿@model dynamic
+
+<h2>Список кинотеатров</h2>
+
+<table class="table">
+    @foreach (var theatre in Model.Theatres)
+    {
+        <tr>
+            <td>@theatre.City</td>
+            <td>@theatre.Address</td>
+            <td><a asp-action="ChangeTheatre" asp-route-theatreId="@theatre.Id">Выбрать</a></td>
+        </tr>
+    }
+</table>

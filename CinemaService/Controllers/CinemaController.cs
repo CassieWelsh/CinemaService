@@ -40,8 +40,22 @@ public class CinemaController : Controller
     {
         try
         {
-            var movies = _context.Session.Include(s => s.Movie).Select(s => s.Movie).AsEnumerable()
+            var city = Request.Cookies["CinemaCity"];
+            if (city is null)
+            {
+                city = _context.Theatre.First().City;
+                Response.Cookies.Append("CinemaCity", city);
+            }
+
+            var theatre = _context.Theatre.First(t => t.City == city);
+            var movies = _context.Session
+                .Include(s => s.Movie)
+                .Include(s => s.Hall)
+                .Where(s => s.Date.ToLocalTime() > DateTime.Now && s.Hall.TheatreId == theatre.Id)
+                .Select(s => s.Movie)
+                .AsEnumerable()
                 .DistinctBy(m => m.Id).ToArray();
+            
             return View(new IndexPageView() { Movies = movies });
         }
         catch (InvalidOperationException e)
@@ -378,5 +392,41 @@ public class CinemaController : Controller
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
+
+    /// <summary>
+    /// Opens theatres list.
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet]
+    public IActionResult ChooseCinema()
+    {
+        try
+        {
+            var theatres = _context.Theatre;
+            return View(new { Theatres = theatres });
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e.ToString());
+            return Redirect("/Cinema/Error");
+        }
+    }
+
+    [HttpGet("ChangeTheatre/{theatreId}")]
+    public IActionResult ChangeTheatre(long theatreId)
+    {
+        try
+        {
+            var city = _context.Theatre.First(t => t.Id == theatreId).City;
+            Response.Cookies.Delete("CinemaCity");
+            Response.Cookies.Append("CinemaCity", city);
+            return Redirect("/");
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e.ToString());
+            return Redirect("/Cinema/Index");
+        }
     }
 }
