@@ -1,0 +1,16 @@
+﻿@model SessionsView
+
+<h2>Сеансы</h2>
+
+<table class="table">
+    @foreach (var session in Model.Sessions)
+    {
+        <tr>
+            <td>ID: @session.Id</td>
+            <td>Фильм: @session.Movie.Title</td>
+            <td>Зал: @session.Hall.Number</td>
+            <td>Дата: @session.Date.ToLocalTime()</td>
+            <td><a asp-action="CancelSession" asp-route-sessionId="@session.Id">Отменить</a></td>
+        </tr>  
+    }
+</table>

@@ -205,6 +205,52 @@ public class ManagerController : Controller
             _logger.LogError(e.ToString());
             return Enumerable.Repeat(new SellsModel{Movie = "Произошла ошибка при обработке запроса", Date = DateTime.MaxValue}, 1);
         }
+    }
 
+    /// <summary>
+    /// Shows all sessions list for current theatre.
+    /// </summary>
+    [HttpGet]
+    public IActionResult Sessions()
+    {
+        try
+        {
+            var claim = ((User.Identity as ClaimsIdentity)?.Claims).First(c => c.Type == "LOCAL AUTHORITY");
+            if (claim is null) throw new ArgumentNullException();
+            var user = _context.User.FirstOrDefault(u => u.Email == claim.Value);
+            if (user is null) throw new ArgumentNullException();
+            var sessions = _context.Session.Include(s => s.Movie).Include(s => s.Hall).Where(s => s.Hall.TheatreId == user.TheatreId).OrderBy(s => s.Date);
+            return View("Sessions", new SessionsView()
+            {
+                Sessions = sessions
+            });
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e.ToString());
+            return Redirect("/Cinema/Error");
+        }
+    }
+
+    /// <summary>
+    /// Cancels the session with given <paramref name="sessionId"/>.
+    /// </summary>
+    /// <param name="sessionId">Id of session to cancel.</param>
+    [HttpGet("/Manager/CancelSession/{sessionId}")]
+    public IActionResult CancelSession(long sessionId)
+    {
+        try
+        {
+
+            var session = _context.Session.First(s => s.Id == sessionId);
+            _context.Remove(session);
+            _context.SaveChanges();
+            return Sessions();
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e.ToString()); 
+            return Redirect("/Cinema/Error");
+        }
     }
 }
