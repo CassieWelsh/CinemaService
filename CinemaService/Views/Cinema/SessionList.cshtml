@@ -23,7 +23,25 @@
 
 @if (Model.Sessions.Count() != 0)
 {
-    <h3>Список сеансов на фильм "@Model.Movie.Title"</h3>
+    <h6>
+        Страны:
+        <span style="font-weight: normal">
+            @foreach (var country in Model.Movie.Countries)
+            {
+                <span>@country.Name ·</span>
+            }
+        </span>
+    </h6>
+    <h6>
+        Жанры:
+        <span style="font-weight: normal">
+            @foreach (var genre in Model.Movie.Genres)
+            {
+                <span>@genre.Name ·</span>
+            }
+        </span>
+    </h6>
+    <h6>Описание: <span style="font-weight: normal">@Model.Movie.Description</span></h6>
     <div class="text-center">
         <div class="row">
             @foreach (var s in Model.Sessions)

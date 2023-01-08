@@ -89,7 +89,7 @@ public class CinemaController : Controller
                     }
                 );
 
-            var movie = _context.Movie.Single(m => m.Id == movieId);
+            var movie = _context.Movie.Include(m => m.Genres).Include(m => m.Countries).Single(m => m.Id == movieId);
             return View(new SessionListView() { Movie = movie, Sessions = sessions });
         }
         catch (InvalidOperationException e)
