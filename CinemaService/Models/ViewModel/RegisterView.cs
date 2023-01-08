@@ -22,6 +22,7 @@ namespace CinemaService.Models.ViewModel
         public string Password { get; init; }
 
         [DataType(DataType.Password)]
+        [Required(ErrorMessage = "Не указан пароль")]
         [Compare("Password", ErrorMessage = "Пароль введен неверно")]
         public string ConfirmPassword { get; init; }
     }
