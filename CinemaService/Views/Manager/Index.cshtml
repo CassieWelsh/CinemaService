@@ -1,4 +1,6 @@
-﻿@{
+﻿@model dynamic
+
+@{
     ViewData["Title"] = "Index";
 }
 
@@ -10,6 +12,7 @@
     }
 </style>
 
+<h4>@Model.City</h4>
 <div>
     <div class="btn-wrapper">
         <a href="/Manager/AddMovie" class="btn btn-primary">Добавить фильм</a>

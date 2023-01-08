@@ -35,7 +35,19 @@ public class ManagerController : Controller
     /// <returns>Index page.</returns>
     public IActionResult Index()
     {
-        return View();
+        try
+        {
+            var claim = ((User.Identity as ClaimsIdentity)?.Claims).First(c => c.Type == "LOCAL AUTHORITY");
+            if (claim is null) throw new ArgumentNullException();
+            var user = _context.User.Include(u => u.Theatre).FirstOrDefault(u => u.Email == claim.Value);
+            if (user is null) throw new ArgumentNullException();
+            return View(new { user.Theatre.City });
+        }
+        catch (InvalidOperationException e)
+        {
+            _logger.LogError(e.ToString());
+            return Redirect("/Cinema/Error");
+        }
     }
 
     /// <summary>
@@ -231,7 +243,7 @@ public class ManagerController : Controller
             if (claim is null) throw new ArgumentNullException();
             var user = _context.User.FirstOrDefault(u => u.Email == claim.Value);
             if (user is null) throw new ArgumentNullException();
-            var sessions = _context.Session.Include(s => s.Movie).Include(s => s.Hall).Where(s => s.Hall.TheatreId == user.TheatreId).OrderBy(s => s.Date);
+            var sessions = _context.Session.Include(s => s.Movie).Include(s => s.Hall).Where(s => s.Hall.TheatreId == user.TheatreId).OrderByDescending(s => s.Date);
             return View("Sessions", new SessionsView()
             {
                 Sessions = sessions
