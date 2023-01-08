@@ -61,11 +61,23 @@ public class ManagerController : Controller
     /// <returns>Redirect to manager control panel.</returns>
     /// <exception cref="ArgumentNullException">If <paramref name="movieView"/> is null.</exception>
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public IActionResult AddMovie(MovieView movieView)
     {
         if (movieView is null) throw new ArgumentNullException();
         try
         {
+            if (!ModelState.IsValid)
+            {
+                return View(
+                    new MovieView
+                    {
+                        Genres = _context.Genre.ToList(),
+                        Countries = _context.Country.ToList()
+                    }
+                );
+            }
+            
             _context.Movie.Add(new Movie()
             {
                 Title = movieView.Title,

@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace CinemaService.Models.ViewModel
 {
@@ -11,13 +10,14 @@ namespace CinemaService.Models.ViewModel
         public string Director { get; init; }
         [Required(ErrorMessage = "Не указан год")]
         public int? Year { get; init; }
-        public string Description { get; init; }
+        public string? Description { get; init; }
         [Required(ErrorMessage = "Не указана длительность фильма")]
         public int? Length { get; init; }
-        [BindProperty]
-        public List<Genre> Genres { get; init; }
+        public List<Genre>? Genres { get; init; }
+        [Required(ErrorMessage = "Не выбраны жанры фильма")]
         public List<short> ChosenGenreIds { get; init; }
-        public List<Country> Countries { get; init; }
+        public List<Country>? Countries { get; init; }
+        [Required(ErrorMessage = "Не выбраны страны фильма")]
         public List<short> ChosenCountryIds { get; init; }
     }
 }

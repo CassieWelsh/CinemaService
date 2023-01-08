@@ -1,4 +1,7 @@
-﻿namespace CinemaService.Models
+﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
+
+namespace CinemaService.Models
 {
     public class Movie
     {

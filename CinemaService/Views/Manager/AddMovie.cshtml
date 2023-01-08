@@ -5,36 +5,34 @@
 
 <h1>Добавить фильм</h1>
 
-
 <form asp-action="AddMovie" asp-controller="Manager">
-    <div class="validation" asp-validation-summary="ModelOnly"></div>
     <div>
         <div class="form-group">
             <label asp-for="Title">Введите название</label>
-            <input type="text" asp-for="Title" />
-            <span asp-validation-for="Title" />
+            <input type="text" asp-for="Title"/>
+            <span asp-validation-for="Title" class="text-danger"></span>
         </div>
         <div class="form-group">
             <label asp-for="Director">Введите режиссера(ов)</label>
-            <input type="text" asp-for="Director" />
-            <span asp-validation-for="Director" />
+            <input type="text" asp-for="Director"/>
+            <span asp-validation-for="Director" class="text-danger"></span>
         </div>
         <div class="form-group">
             <label asp-for="Year">Введите год выхода</label>
-            <input type="number" asp-for="Year" />
-            <span asp-validation-for="Year" />
+            <input type="number" asp-for="Year"/>
+            <span asp-validation-for="Year" class="text-danger"></span>
         </div>
         <div class="form-group">
             <label asp-for="Description">Введите описание*</label>
-            <input type="text" asp-for="Description" />
-            <span asp-validation-for="Description" />
+            <input type="text" asp-for="Description"/>
+            <span asp-validation-for="Description" class="text-danger"></span>
         </div>
         <div class="form-group">
             <label asp-for="Length">Введите длительность</label>
-            <input type="text" asp-for="Length" />
-            <span asp-validation-for="Length" />
+            <input type="text" asp-for="Length"/>
+            <span asp-validation-for="Length" class="text-danger"></span>
         </div>
-        <div style="margin: 15px 0; outline: 1px solid; width:150px; height:100px;">  
+        <div style="margin: 15px 0; outline: 1px solid; width:150px; height:100px;">
             <div style="overflow-y: auto; width:175px; height:100px;">
                 @foreach (var g in Model.Countries)
                 {
@@ -44,7 +42,8 @@
                 }
             </div>
         </div>
-        <div style="margin: 15px 0; outline: 1px solid; width:150px; height:100px;">  
+        <span asp-validation-for="ChosenCountryIds" class="text-danger"></span>
+        <div style="margin: 15px 0; outline: 1px solid; width:150px; height:100px;">
             <div style="overflow-y: auto; width:150px; height:100px;">
                 @foreach (var g in Model.Genres)
                 {
@@ -54,8 +53,9 @@
                 }
             </div>
         </div>
+        <span asp-validation-for="ChosenGenreIds" class="text-danger"></span>
         <div class="form-group">
-            <input type="submit" value="Создать" class="btn btn-outline-dark" />
+            <input type="submit" value="Создать" class="btn btn-outline-dark"/>
         </div>
     </div>
 </form>
