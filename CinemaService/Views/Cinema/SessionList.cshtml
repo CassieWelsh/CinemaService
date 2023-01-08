@@ -21,7 +21,7 @@
 
 <h1>@Model.Movie.Title</h1>
 
-@if (Model.Sessions.Count() != 0)
+@if (Model.Sessions.Any())
 {
     <h6>
         Страны:
@@ -48,7 +48,7 @@
             {
                 <a class="col-md-2 col-sm-6 card-block" asp-controller="Cinema" asp-action="Order" asp-route-sessionId="@s.Id">
                     <div class="asd">
-                        @s.Date
+                        @s.Date, @(s.Is3d ? "3D" : "2D")
                     </div>
                 </a>
             }

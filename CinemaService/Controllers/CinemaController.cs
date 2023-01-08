@@ -75,8 +75,16 @@ public class CinemaController : Controller
     {
         try
         {
+            var city = Request.Cookies["CinemaCity"];
+            if (city is null)
+            {
+                city = _context.Theatre.First().City;
+                Response.Cookies.Append("CinemaCity", city);
+            }
+            
             var sessions = _context.Session
-                .Where(s => s.MovieId == movieId && DateTime.Now.ToUniversalTime() < s.Date)
+                .Include(s => s.Hall).ThenInclude(h => h.Theatre)
+                .Where(s => s.MovieId == movieId && DateTime.Now.ToUniversalTime() < s.Date && s.Hall.Theatre.City == city)
                 .OrderBy(s => s.Date)
                 .Select(s => new Session()
                     {

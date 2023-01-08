@@ -21,14 +21,22 @@
 <div class="text-center">
     <h1 class="display-4"><img src="~/megahorosh.gif" width=250x alt="поставьте 5 пж"/></h1>
     <p>Добро пожаловать в кинотеатр! Приятного просмотра :)</p>
-    <div class="row">
-        @foreach (var m in Model.Movies)
-        {
-            <a class="col-md-4 col-sm-6 card-block" asp-controller="Cinema" asp-action="SessionList" asp-route-movieId = "@m.Id">
-                <div class="asd">
-                    @m.Title
-                </div>
-            </a>
-        }
-    </div>
+    @if (Model.Movies.Any())
+    {
+        <div class="row">
+            @foreach (var m in Model.Movies)
+            {
+                <a class="col-md-4 col-sm-6 card-block" asp-controller="Cinema" asp-action="SessionList" asp-route-movieId = "@m.Id">
+                    <div class="asd">
+                        @m.Title
+                    </div>
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <br/>
+        <h3>Сеансы в данный момент отсутствуют</h3>
+    }
 </div>
