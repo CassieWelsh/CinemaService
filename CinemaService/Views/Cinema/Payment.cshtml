@@ -23,6 +23,7 @@
     {
         <input type="hidden" asp-for="@Model.Email" value="@((User.Identity as ClaimsIdentity)?.Claims.FirstOrDefault(c => c.Type == "LOCAL AUTHORITY").Value)"/>  
     }
+    <span asp-validation-for="@Model.Email" class="text-danger"></span>
 
     <div>К оплате: @Model.Order.Tickets.Sum(t => t.Cost)</div>
     <input type="submit" value="Оплатить" />

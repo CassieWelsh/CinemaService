@@ -43,8 +43,9 @@ public class CinemaController : Controller
             var city = Request.Cookies["CinemaCity"];
             if (city is null)
             {
-                city = _context.Theatre.First().City;
+                city = _context.Theatre.OrderBy(t => t.Id).First().City;
                 Response.Cookies.Append("CinemaCity", city);
+                return Redirect("/");
             }
 
             var theatre = _context.Theatre.First(t => t.City == city);
@@ -248,6 +249,12 @@ public class CinemaController : Controller
                 .Include(o => o.Tickets)
                 .ThenInclude(o => o.Seat)
                 .First(o => o.Id == paymentView.Order.Id);
+
+            if (!ModelState.IsValid)
+            {
+                return View(new PaymentView(){ Order = order });
+            }
+            
             if (paymentView.IsCancel)
             {
                 order.State = OrderState.Cancelled;
